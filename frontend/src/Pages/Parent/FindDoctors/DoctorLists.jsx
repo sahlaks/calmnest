@@ -72,7 +72,7 @@ function DoctorLists() {
               {doctors.map((doctor) => (
                 <div key={doctor._id} className="doctor-card">
                   <img src={doctor.image || defaultImage} alt={doctor.doctorName} className="doctor-image" />
-                  <h3>{doctor.doctorName}</h3>
+                  <h3 className="text-xl font-bold">Dr. {doctor.doctorName}</h3>
                   <button 
                     className="appointment-btn" 
                     onClick={() => handleViewProfile(doctor._id)}

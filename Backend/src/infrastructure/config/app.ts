@@ -47,7 +47,7 @@ const createServer = () => {
         const search = req.query.search as string || '';
     
         const skip = (page - 1) * limit;
-        const searchFilter = search ? { doctorName: { $regex: search, $options: 'i' } } : {};
+        const searchFilter = { ...search ? { doctorName: { $regex: search, $options: 'i' } } : {}, isVerified: true}
 
         const doctors = await doctorModel.find(searchFilter).skip(skip).limit(limit);
         const totalDoctors = await doctorModel.countDocuments();
