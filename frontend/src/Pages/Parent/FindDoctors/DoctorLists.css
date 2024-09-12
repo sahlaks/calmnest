@@ -1,0 +1,76 @@
+.doctor-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px;
+    padding: 5px;
+  }
+  
+  .doctor-card {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    /* background-color: #f4f4f4; */
+    padding: 5px;
+    border-radius: 8px;
+    box-shadow: 1px 8px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .doctor-image {
+    width: 70%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    margin-top: 10px;
+  }
+  
+  .appointment-btn {
+    background-color: #323232;
+    color: #FAF5E9;
+    border: none;
+    padding: 5px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .appointment-btn:hover {
+    background-color: #323225;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .pagination button {
+    margin: 0 5px;
+    padding: 10px 20px;
+    background-color: #f1f1f1;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .pagination button.active {
+    background-color: #323232;
+    color: white;
+  }
+  
+  @media (max-width: 1200px) {
+    .doctor-list {
+      grid-template-columns: repeat(3, 1fr); 
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .doctor-list {
+      grid-template-columns: repeat(2, 1fr); 
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .doctor-list {
+      grid-template-columns: 1fr; 
+    }
+  }
