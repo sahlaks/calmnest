@@ -101,3 +101,68 @@ export const displayDoctors = async (page = 1) => {
     throw error; 
   }
 };
+
+/*................................stripe route...................................*/
+export const stripeCall = async (paymentData, details) => {
+  const requestBody = {
+    ...paymentData,
+    ...details,
+  };
+  const response = await axiosInstance.post("/api/parents/create-checkout-session", requestBody,
+    {withCredentials: true}
+  );
+  return response
+}
+
+/*............................................success update.......................................*/
+export const fetchAppointmentDetails = async (sessionId) => {
+  try {
+      const response = await axiosInstance.post(`/api/parents/success/${sessionId}`, {}, { withCredentials: true });
+      return response.data;
+  } catch (error) {
+      console.error('Error fetching appointment details:', error);
+      throw error;
+  }
+}
+
+/*.................................................update failure..........................................*/
+export const updateFailure = async (sessionId) => {
+  try{
+    const response = await axiosInstance.post(`/api/parents/failure/${sessionId}`,{}, {withCredentials: true})
+    console.log((response));
+    return response.data
+  } catch(error) {
+      console.error('Error in cancelling appointment', error);
+      throw error;
+  }
+}
+
+/*...............................................get appointments.......................................*/
+export const getAppointments =  async() => {
+  try{
+    const result = await axiosInstance.get('/api/parents/getappointments', { withCredentials: true });
+    return result.data
+  }catch(error){
+    console.error('Error in fetching appointments', error);
+    throw error;
+  }
+}
+
+/*.............................................notifications.................................................*/
+export const getNotifications = async (userId) =>{
+  try{
+    const result = await axiosInstance.get(`/api/parents/notifications/${userId}`,{withCredentials: true});
+    return result.data
+  }catch(error){
+    console.error('Error in fetching notifications', error);
+    throw error;
+}
+}
+
+/*.....................................read or unread.........................................*/
+export const changeToRead = async (notificationId) => {
+  console.log(notificationId);
+  
+  const res = await axiosInstance.post('/api/parents/mark-notification-read', { notificationId }, {withCredentials: true});
+  console.log(res);
+}

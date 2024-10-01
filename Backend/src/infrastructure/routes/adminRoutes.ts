@@ -4,12 +4,14 @@ import { AdminUseCase } from '../../usecases/adminUsecases';
 import { AdminRepository } from '../repository/adminRepository';
 import { ParentRepository } from '../repository/parentRepository';
 import { DoctorRepository } from '../repository/doctorRepository';
+import SendEmail from '../services/mailService';
 
 const adminRouter = exress.Router()
+const sendEmail = new SendEmail()
 const parentRepository = new ParentRepository()
 const doctorRepository = new DoctorRepository()
 const adminRepository = new AdminRepository()
-const adminUsecase = new AdminUseCase(adminRepository, parentRepository, doctorRepository)
+const adminUsecase = new AdminUseCase(adminRepository, parentRepository, doctorRepository, sendEmail)
 const controller = new AdminController(adminUsecase)
 
 adminRouter.post('/admin-login',(req,res,next) => {
@@ -42,6 +44,11 @@ adminRouter.post('/doctor/:id/verify',(req,res,next) => {
 
 adminRouter.delete('/doctor/:id/delete',(req,res,next) => {
     controller.deleteDoctor(req,res,next)
+})
+
+adminRouter.post('/doctor/:id/reject',(req,res,next) => {
+    controller.rejectDoctor(req,res,next)
+    
 })
 
 

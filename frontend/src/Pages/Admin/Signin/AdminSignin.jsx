@@ -26,15 +26,13 @@ const handleSubmit = async (event) => {
       try{
         const response = await axiosInstanceAdmin.post('/api/admin/admin-login', userDetails);
         if(response.data.success){
-          toast.success('Login Successfull!')
           dispatch(setAdminCredential(response.data.data))
           navigate('/admin/dashboard')
         }else{
-          setError(response.data.message || 'Login failed!')
+          //setError(response.data.message || 'Login failed!')
         }
       } catch (err) {
         console.error('Error during login:', err);
-        setError(err.response?.data?.message || 'Something went wrong, please try again later.');
       } 
   }
 }

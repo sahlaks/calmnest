@@ -48,3 +48,40 @@ export async function generateDoctorAccessToken(){
     throw error;
   }
 }
+
+export const updateSlotAvailability = async (slotId, isAvailable) => {
+  const res = await axiosInstanceDoctor.put(`/api/doctor/${slotId}/availability`, { isAvailable }, {withCredentials: true})
+  return res;
+}
+
+export const deleteSlot = async (slotId) => {
+  const res = await axiosInstanceDoctor.delete(`/api/doctor/${slotId}/delete`,{withCredentials: true});
+  return res;
+}
+
+export const getAppointments = async () => {
+  const res = await axiosInstanceDoctor.get('/api/doctor/getappointments',{withCredentials: true})
+  return res.data;
+}
+
+export const changeStatus = async (appointmentId, newStatus) => {
+  const response = await axiosInstanceDoctor.put(`/api/doctor/${appointmentId}/status`, { status: newStatus }, {withCredentials: true});
+  return response.data
+}
+
+export const getNotifications = async (doctorId) => {
+  try{
+    const result = await axiosInstanceDoctor.get(`/api/doctor/notifications/${doctorId}`,{withCredentials: true});
+    return result.data
+  }catch(error){
+    console.error('Error in fetching notifications', error);
+    throw error;
+}
+}
+
+/*.....................................read or unread.........................................*/
+export const changeToRead = async (notificationId) => {
+  console.log(notificationId);
+  const res = await axiosInstanceDoctor.post('/api/doctor/mark-notification-read', { notificationId }, {withCredentials: true});
+  console.log(res);
+}

@@ -1,4 +1,5 @@
 import { Document } from "mongodb";
+import { Schema } from "mongoose";
 
 interface IDoctor extends Document {
     _id: string
@@ -24,6 +25,8 @@ interface IDoctor extends Document {
     document: string
     createdAt: Date
     updateAt: Date
+    bio: string
+    appointments: Schema.Types.ObjectId[];
 }
 
 export default IDoctor

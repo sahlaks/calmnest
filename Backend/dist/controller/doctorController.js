@@ -20,17 +20,18 @@ class DoctorController {
     /*...........................................signup......................................*/
     createDoctor(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             try {
                 const { doctorName, email, mobileNumber, password } = req.body;
-                const file = (_a = req.file) === null || _a === void 0 ? void 0 : _a.buffer;
+                const file = req.file;
+                console.log(file);
                 if (!file) {
                     return res.status(400).json({
                         success: false,
                         message: "Document is required and must be a PDF",
                     });
                 }
-                const documentUrl = yield (0, cloudinaryService_1.uploadImage)(file, 'calmnest', 'raw');
+                console.log(file.mimetype);
+                const documentUrl = `uploads/${file.filename}`;
                 console.log(documentUrl);
                 req.session.doctorData = {
                     doctorName,
@@ -364,7 +365,7 @@ class DoctorController {
     updateProfile(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            const { name, email, phone, gender, age, degree, fees, street, city, state, country } = req.body;
+            const { name, email, phone, gender, age, degree, fees, street, city, state, country, bio } = req.body;
             const imageBuffer = (_a = req.file) === null || _a === void 0 ? void 0 : _a.buffer;
             console.log(imageBuffer);
             try {
@@ -385,6 +386,7 @@ class DoctorController {
                     city,
                     state,
                     country,
+                    bio,
                 };
                 const result = yield this.DoctorUseCase.addDoctor(doctorData);
                 if (result.status)
@@ -426,6 +428,72 @@ class DoctorController {
                 const result = yield this.DoctorUseCase.fetchSlotsDetails(doctorId);
                 if (result.status)
                     return res.status(200).json({ success: true, message: result.message, slots: result.data });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*.....................................change availability.......................................................*/
+    changeAvailability(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const doctorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const slotId = req.params.id;
+            console.log(slotId);
+            try {
+                const result = yield this.DoctorUseCase.changeAvailabilityWithId(slotId, doctorId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message, data: result.data });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*.............................................delete a slot..............................................*/
+    deleteSlot(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const doctorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const slotId = req.params.id;
+            try {
+                const result = yield this.DoctorUseCase.deleteSlotWithId(slotId, doctorId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*...........................................notifications...............................................*/
+    getNotifications(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const docId = req.params.id;
+            try {
+                const result = yield this.DoctorUseCase.fetchingNotifications(docId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message, data: result.data });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*................................................read notification....................................*/
+    changeToRead(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { notificationId } = req.body;
+            console.log(notificationId);
+            try {
+                const result = yield this.DoctorUseCase.updateNotification(notificationId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message });
                 return res.status(400).json({ success: false, message: result.message });
             }
             catch (error) {

@@ -146,15 +146,19 @@ const Profile = () => {
 
   const removeKid = async (kidId, index) => {
     try{
-    const result = await removeKidWithId(kidId)
-    if(result.data.success){
-      setKids(prevKids => prevKids.filter((_, i) => i !== index));
-      toast.success(result.data.message)
-    }
+      if (kidId) {
+        const result = await removeKidWithId(kidId)
+        if(result.data.success){
+          setKids(prevKids => prevKids.filter((_, i) => i !== index));
+          toast.success(result.data.message)
+        }
+      }else{
+         setKids(prevKids => prevKids.filter((_, i) => i !== index));
+      }
+
   }catch(error){
     toast.error('Error removing kid');
   }
-   
   };
 
   // Validate kids

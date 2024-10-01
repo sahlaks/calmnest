@@ -303,44 +303,63 @@ class ParentUseCase {
         });
     }
     /*.............................................save parent and kids data....................................*/
-    addParentandKids(parentData, child) {
+    addParentandKids(parentData, childrenData) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                // Save the parent first
                 const savedParent = yield this.iparentRepository.saveParent(parentData);
                 console.log('usecase', savedParent);
                 if (!savedParent) {
                     return { status: false, message: 'Failed to save parent' };
                 }
-                console.log(child);
-                if (!Array.isArray(child) || child.length === 0) {
+                if (!Array.isArray(childrenData) || childrenData.length === 0) {
                     return { status: true, message: 'Parent details updated successfully without child data' };
                 }
                 const parentId = new mongoose_1.default.Types.ObjectId(savedParent._id);
-                console.log('id', parentId);
-                const existingChild = yield this.ichildRepository.validateChild(child, parentId);
-                console.log('exis', existingChild);
-                if (existingChild) {
-                    return { status: false, message: 'Child data already exist in database ' };
+                // Validate existing children
+                const existingChildren = yield this.ichildRepository.validateChild(childrenData, parentId);
+                console.log('existing children', existingChildren);
+                const existingChildrenArray = existingChildren !== null && existingChildren !== void 0 ? existingChildren : [];
+                // Filter out children that already exist in the database
+                const newChildren = childrenData.filter(child => !existingChildrenArray.some(existing => existing.name === child.name &&
+                    existing.age === child.age &&
+                    existing.gender === child.gender));
+                // If no new children to save
+                if (newChildren.length === 0) {
+                    return { status: false, message: 'All provided child data already exists in the database' };
                 }
-                const savedChildren = yield this.ichildRepository.saveChild(child, parentId);
-                console.log('child data', savedChildren);
+                // Save only new children
+                const savedChildren = yield this.ichildRepository.saveChild(newChildren, parentId);
+                console.log('Saved child data', savedChildren);
                 if (!savedChildren) {
                     return { status: false, message: 'Failed to save children' };
+                }
+                const childIds = savedChildren.map(child => new mongoose_1.default.Types.ObjectId(child._id));
+                // Update parent with children IDs
+                const updatedParent = yield this.iparentRepository.updateParentChildren(parentId, childIds);
+                if (!updatedParent) {
+                    return { status: false, message: 'Failed to update parent with children' };
                 }
                 return { status: true, message: 'Updated data successfully', child: savedChildren };
             }
             catch (error) {
+                console.error('Error:', error);
                 return { status: false, message: 'Failure to update data' };
             }
         });
     }
     /*...........................................remove kid data with id..................................*/
-    deleteKidById(id) {
+    deleteKidById(id, parentId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const deletekid = yield this.ichildRepository.deleteById(id);
                 if (!deletekid)
                     return { status: false, message: 'Kid not found' };
+                const kidId = new mongoose_1.default.Types.ObjectId(id);
+                const updatedParent = yield this.iparentRepository.updateParentOnDelete(kidId, parentId);
+                if (!updatedParent) {
+                    return { status: false, message: 'Failed to update parent with kid removal' };
+                }
                 return { status: true, message: 'Kid deleted successfully' };
             }
             catch (error) {
@@ -404,6 +423,36 @@ class ParentUseCase {
             }
             catch (error) {
                 return { status: false, message: 'An error occurred during data fetching' };
+            }
+        });
+    }
+    /*..............................................fetching notifications...................................*/
+    fetchingNotifications(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const res = yield this.iparentRepository.getNotifications(id);
+                if (res)
+                    return { status: true, message: 'Fetched Notifications', data: res };
+                return { status: false, message: 'Failed to fetch notifications' };
+            }
+            catch (error) {
+                return { status: false, message: "An error occured during fetching" };
+            }
+        });
+    }
+    /*........................................make read.............................................*/
+    updateNotification(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log('usecase', id);
+                const res = yield this.iparentRepository.makeRead(id);
+                console.log(res);
+                if (res)
+                    return { status: true, message: 'Read the Notification' };
+                return { status: false, message: 'Failed to make READ' };
+            }
+            catch (error) {
+                return { status: false, message: "An error occured during fetching" };
             }
         });
     }

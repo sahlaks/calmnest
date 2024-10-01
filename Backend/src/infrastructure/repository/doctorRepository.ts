@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import IDoctor from "../../domain/entity/doctor";
 import { IDoctorRepository } from "../../usecases/interface/IDoctorRepository";
 import doctorModel from "../databases/doctorModel";
+import { count } from "console";
+import notificationModel from "../databases/notificationModel";
+import INotification from "../../domain/entity/notification";
 
 export class DoctorRepository implements IDoctorRepository{
 
@@ -46,9 +49,22 @@ export class DoctorRepository implements IDoctorRepository{
     }
 
     /*........................................find all doctors.........................................*/
-    async findDoctor(): Promise<IDoctor[] | null> {
-        const doctors = await doctorModel.find()
-        return doctors
+    async findDoctor(searchQuery: string, skip: number, limit: number): Promise<IDoctor[] | null> {
+        return await doctorModel.find({ doctorName: { $regex: searchQuery, $options: 'i' } })
+        .skip(skip)
+        .limit(limit);
+    }
+
+    async countDocuments(query: string): Promise<number> {
+        return await doctorModel.countDocuments({ doctorName: { $regex: query, $options: 'i' } });
+    }
+
+    async countAll(): Promise<number>{
+        return await doctorModel.countDocuments();
+    }
+
+    async collectDocData(skip: number, limit: number): Promise<IDoctor[]> {
+        return await doctorModel.find().skip(skip).limit(limit)
     }
 
     /*................................................find by Id.................................................*/
@@ -89,4 +105,50 @@ export class DoctorRepository implements IDoctorRepository{
             return null;
           }
         }
+
+    /*............................update doctor with appointment...............................................*/
+    async updateDoctorwithApointment(id: string, doctorId: string): Promise<boolean> {
+        const appointmentObjectId = new mongoose.Types.ObjectId(id);
+        try {
+            const res = await doctorModel.findByIdAndUpdate(
+        doctorId,
+        { $addToSet: { appointments: appointmentObjectId } },
+        { new: true }
+      )
+      console.log(res);
+      if (res) {
+        console.log("Doctor updated successfully with appointment ID");
+        return true;
+      } else {
+        console.log("Doctor not found or update failed");
+        return false;
+      }
+    } catch (error) {
+        console.error("Error updating doctor", error);
+        return false;
+    }
+    }
+
+    /*..............................................all notifications.............................................*/
+async getNotifications(id: string): Promise<INotification[] | null> {
+    try{
+      const notifications = await notificationModel.find({doctorId: id, toParent: false}).sort({createdAt: -1})
+      console.log(notifications);
+      return notifications
+    } catch (error) {
+      return null;
+    }
+    }
+  
+    /*........................................update to read................................................*/
+    async makeRead(id: string): Promise<boolean> {
+      try{
+        const notifications = await notificationModel.findByIdAndUpdate(id,{$set: {isRead: true}})
+        console.log(notifications);
+        return true
+        } catch (error) {
+        return false;
+      }
+    }
+  
 }

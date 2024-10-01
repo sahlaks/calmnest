@@ -3,6 +3,9 @@ import parentModel from "../databases/parentModel";
 import { IParentRepository } from "../../usecases/interface/IParentRepository";
 import IChild from "../../domain/entity/Child";
 import childModel from "../databases/childModel";
+import mongoose, { Types } from "mongoose";
+import INotification from "../../domain/entity/notification";
+import notificationModel from "../databases/notificationModel";
 
 export class ParentRepository implements IParentRepository {
   /*..............................find user through email............................................*/
@@ -85,11 +88,16 @@ export class ParentRepository implements IParentRepository {
 }
 
 /*.................................................find whole data...........................................*/
-async findParent(): Promise<IParent[] | null> {
-  const parents = await parentModel.find()
+async findParent(page: number, limit: number): Promise<IParent[] | null> {
+  const skip = (page - 1) * limit;
+  const totalParents = await parentModel.countDocuments();
+  const parents = await parentModel.find() .skip(skip).limit(limit).populate('children').exec();
   return parents
 }
 
+async countDocuments(): Promise<number> {
+  return parentModel.countDocuments()
+}
 /*....................................................find and update by blocking..................................*/
 async findParentByIdandUpdate(id: string, update: object): Promise<IParent | null> {
   const parent = await parentModel.findByIdAndUpdate({_id: id},{$set: update},{new: true})
@@ -102,8 +110,67 @@ async findAndDeleteById(id: string): Promise<IParent | null> {
   return parent
 }
 
-
-
-
-
+/*...........................................update with child Ids...................................................*/
+async updateParentChildren(parentId: Types.ObjectId, childIds: Types.ObjectId[]): Promise<IParent | null> {
+  return await parentModel.findByIdAndUpdate(parentId,  { $push: { children: { $each: childIds } } },  { new: true })
 }
+
+/*........................................update parent on deleting kid.....................................*/
+async updateParentOnDelete(kidId: Types.ObjectId, parentId: string): Promise<boolean> {
+  const result = await parentModel.updateOne(
+    { _id: parentId },                       
+    { $pull: { children: kidId } }     
+    );
+    return result.modifiedCount > 0
+}
+
+/*.......................................update payment id.......................................*/
+async updateParentwithPayment(appointmentId: string, parentId: string): Promise<boolean> {
+  try{
+    const appointmentObjectId = new mongoose.Types.ObjectId(appointmentId);
+    const res = await parentModel.findByIdAndUpdate(
+    parentId,
+    { $addToSet: { appointments: appointmentObjectId } },
+    { new: true }
+  )
+  console.log(res);
+  if (res) {
+    console.log("Parent updated successfully with appointment ID");
+    return true;
+  } else {
+    console.log("Parent not found or update failed");
+    return false;
+  }
+} catch (error) {
+  return false;
+}
+}
+
+/*..............................................all notifications.............................................*/
+async getNotifications(id: string): Promise<INotification[] | null> {
+  try{
+    const notifications = await notificationModel.find({parentId: id, toParent: true}).sort({createdAt: -1})
+    console.log(notifications);
+    return notifications
+  } catch (error) {
+    return null;
+  }
+  }
+
+  /*........................................update to read................................................*/
+  async makeRead(id: string): Promise<boolean> {
+    try{
+      console.log(id);
+      
+      const notifications = await notificationModel.findByIdAndUpdate(id,{$set: {isRead: true}})
+
+      console.log(notifications);
+      return true
+      } catch (error) {
+      return false;
+    }
+  }
+  
+}
+
+

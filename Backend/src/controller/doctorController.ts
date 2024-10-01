@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import IDoctor from "../domain/entity/doctor";
 import { DoctorUseCase } from "../usecases/doctorUsecases";
 import mongoose from "mongoose";
-import { uploadImage } from "../infrastructure/services/cloudinaryService";
+import { uploadDocumentFile, uploadImage } from "../infrastructure/services/cloudinaryService";
 import { verifyRefreshToken } from "../infrastructure/services/tokenVerification";
 import { jwtCreation } from "../infrastructure/services/JwtCreation";
 import { AuthRequest } from "../domain/entity/types/auth";
-import { Auth } from "aws-sdk/clients/docdbelastic";
+import uploadDocument from "../infrastructure/services/documentUpload";
+
+
 
 export class DoctorController {
   constructor(private DoctorUseCase: DoctorUseCase) {}
@@ -20,7 +22,8 @@ export class DoctorController {
     try {
       const { doctorName, email, mobileNumber, password } =
         req.body;
-        const file = req.file?.buffer
+        const file = req.file
+        console.log(file);
         
         if (!file) {
           return res.status(400).json({
@@ -28,9 +31,11 @@ export class DoctorController {
             message: "Document is required and must be a PDF",
           });
         }
+        console.log(file.mimetype);
 
-      const documentUrl = await uploadImage(file, 'calmnest', 'raw');
-      console.log(documentUrl);
+        const documentUrl = `uploads/${file.filename}`;
+        console.log(documentUrl);
+        
       
       req.session.doctorData = {
         doctorName,
@@ -48,12 +53,12 @@ export class DoctorController {
           success: true,
           message: "OTP send to your email",
         });
-      } else {
+     } else {
         return res.json({
           success: false,
           message: result.message,
-        });
-      }
+       });
+     }
     } catch (error) {
       next(error);
     }
@@ -379,7 +384,7 @@ async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Res
 
 /*................................................update profile..........................................*/
 async updateProfile(req: AuthRequest,res: Response, next: NextFunction): Promise<Response | void>{
-  const { name, email, phone, gender, age, degree, fees, street, city, state, country} = req.body;
+  const { name, email, phone, gender, age, degree, fees, street, city, state, country, bio} = req.body;
   const imageBuffer = req.file?.buffer;
   console.log(imageBuffer);
   
@@ -402,6 +407,7 @@ async updateProfile(req: AuthRequest,res: Response, next: NextFunction): Promise
       city, 
       state, 
       country,
+      bio,
   };
 
       const result = await this.DoctorUseCase.addDoctor(doctorData as IDoctor)
@@ -441,6 +447,59 @@ async fetchSlots(req: AuthRequest, res: Response, next: NextFunction): Promise<R
     if(result.status) return res.status(200).json({success: true, message: result.message, slots: result.data})
     return res.status(400).json({success: false, message: result.message})
   }catch(error){
+    next(error)
+  }
+}
+
+/*.....................................change availability.......................................................*/
+async changeAvailability(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+  const doctorId = req.user?.id as string;
+  const slotId = req.params.id
+  console.log(slotId);
+  try{
+    const result = await this.DoctorUseCase.changeAvailabilityWithId(slotId,doctorId)
+    if(result.status) return res.status(200).json({success:true, message: result.message, data: result.data})
+    return res.status(400).json({success: false, message: result.message})
+  }catch(error){
+    next(error)
+  }
+}
+
+/*.............................................delete a slot..............................................*/
+async deleteSlot(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+  const doctorId = req.user?.id as string
+  const slotId = req.params.id
+  try{
+    const result = await this.DoctorUseCase.deleteSlotWithId(slotId,doctorId)
+    if(result.status) return res.status(200).json({success:true, message: result.message})
+    return res.status(400).json({success: false, message: result.message})
+  }catch(error){
+    next(error)
+  }
+}
+
+/*...........................................notifications...............................................*/
+async getNotifications(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+  const docId = req.params.id as string
+  try{
+    const result = await this.DoctorUseCase.fetchingNotifications(docId)
+    if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+    return res.status(400).json({success: false, message: result.message})
+  } catch(error) {
+    next(error)
+  }
+}
+
+/*................................................read notification....................................*/
+async changeToRead(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+  const { notificationId } = req.body;
+  console.log(notificationId);
+  
+  try{
+    const result = await this.DoctorUseCase.updateNotification(notificationId)
+    if(result.status) return res.status(200).json({success: true, message: result.message})
+    return res.status(400).json({success: false, message: result.message})
+  } catch(error) {
     next(error)
   }
 }

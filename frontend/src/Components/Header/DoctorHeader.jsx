@@ -1,18 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../Public/calmnestcrop.png';
-import { AppBar, Toolbar, IconButton, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Menu, MenuItem, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText, Badge } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MenuIcon from '@mui/icons-material/Menu';
 import { axiosInstanceDoctor } from '../../Services/AxiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { doctorLogout } from '../../Redux/Slice/authSlice';
+import { changeToRead, getNotifications } from '../../Services/API/DoctorAPI';
 
 function DoctorHeader() {
   const doctorId = useSelector((state) => state.auth.doctorData?._id);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [notifications, setNotifications] = useState([]); 
+  const [openNotificationsModal, setOpenNotificationsModal] = useState(false); 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [navigate]);
+
+const fetchNotifications = async () => {
+  try {
+    const response = await getNotifications(doctorId)
+    if (response.success) {
+      console.log(response.data);
+      
+      const unread = response.data.filter(notification => !notification.isRead).length;
+      setNotifications(response.data);
+      console.log(unread);
+      
+      setUnreadCount(unread);
+      console.log(unreadCount);
+      
+    }
+  } catch (error) {
+    console.log('Failed to fetch notifications:', error);
+  }
+};
+
+const handleRead = async (notificationId) => {
+  try {
+   await changeToRead(notificationId);
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((notification) =>
+        notification._id === notificationId
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+  } catch (error) {
+    console.log('Failed to mark notification as read:', error);
+  }
+};
+
+const handleNotificationsOpen = () => {
+  setOpenNotificationsModal(true);
+};
+
+const handleNotificationsClose = () => {
+  setOpenNotificationsModal(false);
+};
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -67,7 +117,11 @@ function DoctorHeader() {
                 </Link>
               )
             )}
-             <Link style={linkStyle}>Notifications</Link>
+              <Link onClick={handleNotificationsOpen} style={linkStyle}>
+            <Badge badgeContent={unreadCount} color="primary">
+              Notifications
+            </Badge>
+            </Link>
           </div>
 
           {/* Menu Icon and Notification Icon for Smaller Screens */}
@@ -75,12 +129,40 @@ function DoctorHeader() {
             <IconButton onClick={handleMenuOpen} style={{ color: '#323232' }}>
               <MenuIcon />
             </IconButton>
-            <IconButton style={{ color: '#323232' }}>
+            <IconButton style={{ color: '#323232' }} onClick={handleNotificationsOpen}>
+            <Badge badgeContent={unreadCount} color="primary">
               <NotificationsIcon />
+            </Badge>
             </IconButton>
           </div>
         </Toolbar>
       </AppBar>
+
+            {/* Notification Modal */}
+      <Dialog open={openNotificationsModal} onClose={handleNotificationsClose} fullWidth maxWidth="sm">
+        <DialogTitle className='text-2xl font-bold'>Notifications</DialogTitle>
+        <DialogContent>
+          <List>
+            {notifications.length > 0 ? (
+              notifications.map((notification) => (
+                <ListItem key={notification._id}
+                onClick={() => handleRead(notification._id)}
+                style={{
+                  backgroundColor: notification.isRead ? '#FAF5E9' : '#ddd0c8', 
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #ccc',
+                  padding: '16px',
+                  marginBottom: '8px'
+                }}>
+                  <ListItemText primary={notification.message} secondary={new Date(notification.createdAt).toLocaleString()} />
+                </ListItem>
+              ))
+            ) : (
+              <p>No notifications available.</p>
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       {/* Dropdown Menu for Smaller Screens */}
       <Menu

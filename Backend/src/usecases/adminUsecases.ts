@@ -8,16 +8,19 @@ import { log } from "util";
 import { bool } from "aws-sdk/clients/signer";
 import { IDoctorRepository } from "./interface/IDoctorRepository";
 import IDoctor from "../domain/entity/doctor";
+import SendEmail from "../infrastructure/services/mailService";
 
 export class AdminUseCase {
     private adminRepository: IAdminRepository;
     private parentRepository: IParentRepository;
     private doctorRepository: IDoctorRepository;
+    private SendEmail: SendEmail;
   
-    constructor(adminRepository: IAdminRepository, parentRepository: IParentRepository, doctorRepository: IDoctorRepository) {
+    constructor(adminRepository: IAdminRepository, parentRepository: IParentRepository, doctorRepository: IDoctorRepository, sendEmail: SendEmail) {
       this.adminRepository = adminRepository;
       this.parentRepository = parentRepository;
-      this.doctorRepository = doctorRepository
+      this.doctorRepository = doctorRepository;
+      this.SendEmail = sendEmail
     }
 
     /*..............................................find admin...................................................*/
@@ -36,12 +39,14 @@ export class AdminUseCase {
     }
 
     /*.......................................collect parent data.........................................*/
-    async collectParentData(): Promise<{status: boolean, message?: string, data?: IParent[]}> {
-        const parent = await this.parentRepository.findParent()
+    async collectParentData(page: number, limit: number): Promise<{status: boolean, message?: string, data?: IParent[], totalPages?: number}> {
+        const parent = await this.parentRepository.findParent(page,limit)
+        const totalParents = await this.parentRepository.countDocuments();
+        const totalPages = Math.ceil(totalParents / limit);
         if(parent){
-            return {status: true, message: 'Fetch data', data: parent}
+            return {status: true, message: 'Fetch Parent Data Successfully', data: parent,  totalPages: totalPages}
         }
-        return {status: false, message: 'No data'}
+        return {status: false, message: 'No data available'}
     }
 
     /*..........................................find parent by id and block..........................................*/
@@ -65,13 +70,28 @@ export class AdminUseCase {
     }
 
     /*.............................................collect doctor data...........................................*/
-    async collectDoctorData(): Promise<{status: boolean, message?: string, data?: IDoctor[]}> {
-        const doctor = await this.doctorRepository.findDoctor()
+    async collectDoctorData(query: string, page: number, limit: number): Promise<{status: boolean, message?: string, data?: IDoctor[]}> {
+        const skip = (page - 1) * limit;
+        const doctor = await this.doctorRepository.findDoctor(query, skip, limit)
         if(doctor){
-            return {status: true, message: 'Fetch data', data: doctor}
+            return {status: true, message: 'Fetch Doctor Data Successfully', data: doctor}
         }
-        return {status: false, message: 'No data'}
+        return {status: false, message: 'No data available'}
     } 
+
+    async countSearchResults(query: string): Promise<number> {
+        return await this.doctorRepository.countDocuments(query)
+    }
+
+    async countAllDoctors(): Promise<number>{
+        return await this.doctorRepository.countAll()
+    }
+
+    async collectDocData(page: number, limit: number): Promise<{data: IDoctor[]}>{
+        const skip = (page - 1) * limit;
+        const doctors = await this.doctorRepository.collectDocData(skip, limit);
+        return { data: doctors};
+    }
 
     /*..........................................find doctor and block.................................*/
     async findAndBlockDoctor(id: string): Promise<{status: boolean; message?: string; data?: IDoctor}> {
@@ -90,10 +110,18 @@ export class AdminUseCase {
     async verifyDoctorwithId (id: string): Promise<{status: boolean; message?: string; data?: IDoctor}> {
         const doc = await this.doctorRepository.findDetailsById(id)
         if(doc){
+            if (doc.isVerified) return { status: false, message: 'Doctor is already verified' };
+            
             const updated = await this.doctorRepository.findAndVerify(id)
             if(updated){
-                
-                return { status: true, message: 'Doctor is verified', data:updated };
+                const mailOptions = {
+                    email: updated.email,
+                    subject: `Dr. ${updated.doctorName}, verification process `,
+                    code: 'You are Successfully Verified',
+                  };
+                  await this.SendEmail.sendEmail(mailOptions);
+            
+                return { status: true, message: 'Doctor is verified and send email', data:updated };
             }
         }
         return { status: false, message: 'Doctor does not exist' };
@@ -104,6 +132,23 @@ export class AdminUseCase {
         const doc = await this.doctorRepository.findAndDeleteById(id)
         if(!doc) return { status: false, message: 'Doctor not found' };
         return {status: true, message: 'Doctor deleted successfully!'}
+    }
+
+    /*.............................find and rejct..................................................... */
+    async rejectWithId(id: string): Promise<{status: boolean; message?: string}>{
+        const doc = await this.doctorRepository.findDetailsById(id)
+        if(doc){
+            const mailOptions = {
+                email: doc.email,
+                subject: `Dr. ${doc.doctorName}, application rejection `,
+                code: 'You are Rejected due to insufficeint data',
+              };
+              await this.SendEmail.sendEmail(mailOptions);
+            const d = await this.doctorRepository.findAndDeleteById(id)
+            return { status: true, message: 'Doctor profile got rejected'}
+        } else{
+            return { status: false, message: 'Doctor does not exist' }; 
+        }
     }
 
 }

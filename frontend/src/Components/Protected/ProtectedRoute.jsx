@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
  if (!allowedRoles.includes(role)) {
-   // toast.error('You are not authorized to access this page. Please log in with the appropriate credentials.');
+  // toast.error('You are not authorized to access this page. Please log in with the appropriate credentials.');
     return <Navigate to="/" replace />
   }
 

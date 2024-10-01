@@ -1,7 +1,8 @@
 import { axiosInstanceAdmin, axiosInstanceDoctor } from "../AxiosConfig"
 
-export const fetchParents = async () => {
-    const res = await axiosInstanceAdmin.get('/api/admin/fetch-parents',{withCredentials: true})
+export const fetchParents = async (page, limit) => {
+    const res = await axiosInstanceAdmin.get('/api/admin/fetch-parents',{params: { page: page, 
+      limit: limit  }, withCredentials: true})
     console.log(res);
     return res
     
@@ -30,8 +31,9 @@ export const deleteParent = async (parentId) => {
     }
 }
 
-export const fetchDoctors = async () => {
-    const res = await axiosInstanceAdmin.get('/api/admin/fetch-doctors',{withCredentials: true})
+export const fetchDoctors = async (query, page, limit) => {
+    const res = await axiosInstanceAdmin.get('/api/admin/fetch-doctors', {params: { search: query,  page: page, 
+      limit: limit  }, withCredentials: true})
     console.log(res);
     return res
 }
@@ -64,5 +66,15 @@ export const deleteDoctor = async (id) => {
         console.error('Error deleting doctor:', error);
         throw error;
       }
+}
+
+export const rejectDoctor = async (id) => {
+  try {
+    const response = await axiosInstanceAdmin.post(`/api/admin/doctor/${id}/reject`,{},{withCredentials: true});
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting doctor:', error);
+    throw error;
+  }
 }
 

@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Schema } from "mongoose";
 
 interface IParent extends Document {
     _id: string
@@ -18,7 +18,8 @@ interface IParent extends Document {
     city: string;
     state: string;
     country: string;
-
+    children:  Schema.Types.ObjectId[];
+    appointments: Schema.Types.ObjectId[];
 }
 
 export default IParent

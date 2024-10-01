@@ -27,8 +27,7 @@ class AdminController {
                 res.json({ success: true, message: admin.message, data: admin.data });
             }
             catch (error) {
-                console.error('Error during admin login:', error);
-                res.status(500).json({ message: 'Internal Server Error' });
+                next(error);
             }
         });
     }
@@ -36,9 +35,11 @@ class AdminController {
     fetchParents(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const parents = yield this.AdminUsecase.collectParentData();
+                const page = parseInt(req.query.page) || 1;
+                const limit = parseInt(req.query.limit) || 6;
+                const parents = yield this.AdminUsecase.collectParentData(page, limit);
                 if (parents)
-                    return res.status(200).json({ success: true, message: parents.message, data: parents.data });
+                    return res.status(200).json({ success: true, message: parents.message, data: parents.data, totalPages: parents.totalPages });
                 else
                     return res.status(400).json({ success: false, message: 'No data available' });
             }
@@ -82,9 +83,21 @@ class AdminController {
     fetchdoctors(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const doctor = yield this.AdminUsecase.collectDoctorData();
-                if (doctor)
-                    return res.status(200).json({ success: true, message: doctor.message, data: doctor.data });
+                const searchQuery = req.query.search || '';
+                const page = parseInt(req.query.page) || 1;
+                const limit = parseInt(req.query.limit) || 6;
+                let doctors, totalDoctors;
+                if (searchQuery) {
+                    doctors = yield this.AdminUsecase.collectDoctorData(searchQuery, page, limit);
+                    totalDoctors = yield this.AdminUsecase.countSearchResults(searchQuery);
+                }
+                else {
+                    doctors = yield this.AdminUsecase.collectDocData(page, limit);
+                    totalDoctors = yield this.AdminUsecase.countAllDoctors();
+                }
+                if (doctors)
+                    return res.status(200).json({ success: true, data: doctors.data, totalPages: Math.ceil(totalDoctors / limit),
+                        currentPage: page, });
                 else
                     return res.status(400).json({ success: false, message: 'No data available' });
             }
@@ -116,12 +129,12 @@ class AdminController {
                 const { id } = req.params;
                 const result = yield this.AdminUsecase.verifyDoctorwithId(id);
                 if (result.status)
-                    return res.status(201).json({ success: true, data: result.data });
+                    return res.status(201).json({ success: true, message: result.message, data: result.data });
                 else
                     return res.status(400).json({ success: false, message: result.message });
             }
             catch (error) {
-                res.status(500).json({ message: 'Error verifying doctor', error });
+                next(error);
             }
         });
     }
@@ -137,7 +150,23 @@ class AdminController {
                     return res.status(400).json({ success: false, message: result.message });
             }
             catch (error) {
-                res.status(500).json({ message: 'Error verifying doctor', error });
+                next(error);
+            }
+        });
+    }
+    /*.........................................reject a profile.........................................*/
+    rejectDoctor(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id } = req.params;
+                const result = yield this.AdminUsecase.rejectWithId(id);
+                if (result.status)
+                    return res.status(201).json({ success: true, message: result.message });
+                else
+                    return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
             }
         });
     }

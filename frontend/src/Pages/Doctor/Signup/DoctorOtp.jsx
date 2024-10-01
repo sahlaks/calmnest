@@ -85,10 +85,6 @@ function DoctorOtp() {
       console.log(result);
       
       if(result.success){
-        //setSuccessMessage('OTP verified successfully! You are registered!')
-        //setErrorMessage('')
-        // localStorage.setItem('doctorData', JSON.stringify(result.user))
-        // dispatch(setDoctorCredential(result.user))
         toast.success('OTP verified successfully! You are registered!',)
         setTimeout(() => {
           navigate('/verification');
@@ -118,9 +114,9 @@ function DoctorOtp() {
       if (response.data.success) {
         setSuccessMessage('New OTP sent. Please check your email.');
         setErrorMessage('');
-        const newEndTime = new Date().getTime() + 30 * 1000;
+        const newEndTime = new Date().getTime() + 60 * 1000;
         localStorage.setItem('otpEndTime', newEndTime);
-        setTimer(30);
+        setTimer(60);
         setTimerRunning(true);
       } else {
         setSuccessMessage('');

@@ -1,0 +1,110 @@
+import { Request, Response, NextFunction } from "express";
+import { createCheckoutSession, retrieveSession } from "../infrastructure/services/stripeService";
+import { AppointmentUseCase } from "../usecases/appointmentUsecase";
+import { AuthRequest } from "../domain/entity/types/auth";
+import { Auth } from "aws-sdk/clients/docdbelastic";
+
+export class AppointmentController {
+    constructor( private AppointmentUsecase: AppointmentUseCase) {}
+
+    /*.............................................calling stripe.........................................*/
+    async callingStripe(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> {
+        const parentId = req.user?.id as string
+        const { amount, name, age, gender, doctorId, doctorName, parentName, childId, date, startTime, endTime, fees } = req.body;
+        const appointmentDetails = {
+            name,
+            age,
+            gender,
+            doctorId,
+            doctorName,
+            parentId,
+            parentName,
+            childId,
+            date,
+            startTime,
+            endTime,
+            fees
+          };
+        try {
+            const result = await this.AppointmentUsecase.savePendingAppointment(appointmentDetails)
+            if (!result.status) return res.status(400).json({ error: result.message });
+            const appointmentId = result.data?._id;
+            const appointmentIdString = String(appointmentId);
+            const session = await createCheckoutSession(amount, appointmentIdString); 
+            res.status(200).json({ id: session.id });
+        } catch (error) {
+          next(error)
+        }
+    }
+
+    /*......................................success update...............................................*/
+    async successUpdate(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+        const parentId = req.user?.id as string
+        const sessionId = req.params.session_id;
+        try{
+            const session = await retrieveSession(sessionId)
+            if(session) {
+                var appointmentId = session.metadata?.appointmentId;
+                const result = await this.AppointmentUsecase.updateSuccessPayment(appointmentId as string, parentId)
+                if(result.status) return res.status(200).json({success: true, message: 'Appointment Saved Successfully', data: result.data})
+                else return res.status(400).json({success: false, message: 'Payment Failed'})
+            }  
+        } catch (error){
+            next(error)
+        } 
+    }
+
+    /*...........................................making failure........................................*/
+    async failureUpdate(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+        const parentId = req.user?.id as string
+        const sessionId = req.params.session_id;
+         try{
+            const session = await retrieveSession(sessionId)
+            if(session) {
+                var appointmentId = session.metadata?.appointmentId;
+                const result = await this.AppointmentUsecase.updateFailurePayment(appointmentId as string)
+                if(result.status) return res.status(200).json({success: true, message: 'Appointment Failed'})
+                else return res.status(400).json({success: false, message: 'Payment Failed'})
+            }
+        } catch(error) {
+            next(error)
+        }
+    }
+
+    /*......................................get appointments...................................*/
+    async getAppointments(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> {
+        const parentId = req.user?.id as string
+        try{
+            const result = await this.AppointmentUsecase.fetchAppointment(parentId)
+            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+            return res.status(400).json({success: false})
+        } catch(error){
+            next(error)}
+    }
+
+    /*......................................get doctor appointments...........................................*/
+    async getDoctorAppointments(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+        const doctorId = req.user?.id as string
+        try{
+            const result = await this.AppointmentUsecase.fetchDoctorsAppointments(doctorId)
+            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+            return res.status(400).json({success: false})
+        } catch(error){
+            next(error)} 
+    }
+
+    /*..................................change status of appointment................................*/
+    async changeStatus(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+        const doctorId = req.user?.id as string
+        const {status} = req.body
+        const appointmentId = req.params.id
+        try{
+            const result = await this.AppointmentUsecase.changeStatusOfAppointment(appointmentId,status,doctorId)
+            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+            return res.status(400).json({success: false})
+        } catch(error){
+            next(error)
+        } 
+    }
+
+}

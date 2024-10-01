@@ -44,4 +44,30 @@ export class SlotRepository implements ISlotRepository{
         }
     }
 
+    /*..................................update Slot availability......................................*/
+    async updateSlot(slotId: string, doctorId: string): Promise<ISlot | null> {
+        try{
+            const slot = await slotModel.findById(slotId)
+            if(slot){
+                if (slot.doctorId.toString() !== doctorId) return null;
+                slot.isAvailable = false;
+                await slot.save();
+                return slot
+            }
+            return null;
+
+        } catch(error){
+            return null
+        }
+    }
+
+    /*.........................................delete slot................................*/
+    async deleteSlot(slotId: string, doctorId: string): Promise<ISlot | null>{
+        try{
+            const deletedSlot = await slotModel.findOneAndDelete({ _id: slotId, doctorId: doctorId });
+            return deletedSlot
+        }catch(error){
+            return null
+        }
+    }
 } 

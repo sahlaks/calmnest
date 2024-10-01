@@ -1,5 +1,7 @@
+import mongoose from "mongoose";
 import IChild from "../../domain/entity/Child";
 import IParent from "../../domain/entity/Parents";
+import INotification from "../../domain/entity/notification";
 
 export interface IParentRepository {
     findParentByEmail(email: string): Promise<IParent | null>;
@@ -9,7 +11,13 @@ export interface IParentRepository {
     findDetailsById(id: string): Promise< IParent | null>;
     saveParent(data: IParent): Promise<IParent | null>;
     updateParentPassword(id: string, password: string): Promise<IParent | null>
-    findParent(): Promise<IParent[] | null>
+    findParent(page: number, limit: number): Promise<IParent[] | null>
     findParentByIdandUpdate(id: string, update: object): Promise<IParent | null>
     findAndDeleteById(id: string): Promise<IParent | null>
+    updateParentChildren(parentId: mongoose.Types.ObjectId, childIds: mongoose.Types.ObjectId[]): Promise<IParent | null>
+    updateParentOnDelete(kidId: mongoose.Types.ObjectId, parentId: string): Promise<boolean>
+    countDocuments(): Promise<number>
+    updateParentwithPayment(appointmentId: string, parentId: string): Promise<boolean>
+    getNotifications(id: string): Promise<INotification[] | null>
+    makeRead(id: string): Promise<boolean>
 }

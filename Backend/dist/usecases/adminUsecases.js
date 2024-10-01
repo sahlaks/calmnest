@@ -16,10 +16,11 @@ exports.AdminUseCase = void 0;
 const JwtCreation_1 = require("../infrastructure/services/JwtCreation");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 class AdminUseCase {
-    constructor(adminRepository, parentRepository, doctorRepository) {
+    constructor(adminRepository, parentRepository, doctorRepository, sendEmail) {
         this.adminRepository = adminRepository;
         this.parentRepository = parentRepository;
         this.doctorRepository = doctorRepository;
+        this.SendEmail = sendEmail;
     }
     /*..............................................find admin...................................................*/
     findAdmin(email, password) {
@@ -39,13 +40,15 @@ class AdminUseCase {
         });
     }
     /*.......................................collect parent data.........................................*/
-    collectParentData() {
+    collectParentData(page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const parent = yield this.parentRepository.findParent();
+            const parent = yield this.parentRepository.findParent(page, limit);
+            const totalParents = yield this.parentRepository.countDocuments();
+            const totalPages = Math.ceil(totalParents / limit);
             if (parent) {
-                return { status: true, message: 'Fetch data', data: parent };
+                return { status: true, message: 'Fetch Parent Data Successfully', data: parent, totalPages: totalPages };
             }
-            return { status: false, message: 'No data' };
+            return { status: false, message: 'No data available' };
         });
     }
     /*..........................................find parent by id and block..........................................*/
@@ -72,13 +75,31 @@ class AdminUseCase {
         });
     }
     /*.............................................collect doctor data...........................................*/
-    collectDoctorData() {
+    collectDoctorData(query, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const doctor = yield this.doctorRepository.findDoctor();
+            const skip = (page - 1) * limit;
+            const doctor = yield this.doctorRepository.findDoctor(query, skip, limit);
             if (doctor) {
-                return { status: true, message: 'Fetch data', data: doctor };
+                return { status: true, message: 'Fetch Doctor Data Successfully', data: doctor };
             }
-            return { status: false, message: 'No data' };
+            return { status: false, message: 'No data available' };
+        });
+    }
+    countSearchResults(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.doctorRepository.countDocuments(query);
+        });
+    }
+    countAllDoctors() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.doctorRepository.countAll();
+        });
+    }
+    collectDocData(page, limit) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const skip = (page - 1) * limit;
+            const doctors = yield this.doctorRepository.collectDocData(skip, limit);
+            return { data: doctors };
         });
     }
     /*..........................................find doctor and block.................................*/
@@ -100,9 +121,17 @@ class AdminUseCase {
         return __awaiter(this, void 0, void 0, function* () {
             const doc = yield this.doctorRepository.findDetailsById(id);
             if (doc) {
+                if (doc.isVerified)
+                    return { status: false, message: 'Doctor is already verified' };
                 const updated = yield this.doctorRepository.findAndVerify(id);
                 if (updated) {
-                    return { status: true, message: 'Doctor is verified', data: updated };
+                    const mailOptions = {
+                        email: updated.email,
+                        subject: `Dr. ${updated.doctorName}, verification process `,
+                        code: 'You are Successfully Verified',
+                    };
+                    yield this.SendEmail.sendEmail(mailOptions);
+                    return { status: true, message: 'Doctor is verified and send email', data: updated };
                 }
             }
             return { status: false, message: 'Doctor does not exist' };
@@ -115,6 +144,25 @@ class AdminUseCase {
             if (!doc)
                 return { status: false, message: 'Doctor not found' };
             return { status: true, message: 'Doctor deleted successfully!' };
+        });
+    }
+    /*.............................find and rejct..................................................... */
+    rejectWithId(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const doc = yield this.doctorRepository.findDetailsById(id);
+            if (doc) {
+                const mailOptions = {
+                    email: doc.email,
+                    subject: `Dr. ${doc.doctorName}, application rejection `,
+                    code: 'You are Rejected due to insufficeint data',
+                };
+                yield this.SendEmail.sendEmail(mailOptions);
+                const d = yield this.doctorRepository.findAndDeleteById(id);
+                return { status: true, message: 'Doctor profile got rejected' };
+            }
+            else {
+                return { status: false, message: 'Doctor does not exist' };
+            }
         });
     }
 }

@@ -17,6 +17,7 @@ import { IDoctorRepository } from "./interface/IDoctorRepository";
 import IDoctor from "../domain/entity/doctor";
 import ISlot from "../domain/entity/slots";
 import { ISlotRepository } from "./interface/ISlotRepository";
+import INotification from "../domain/entity/notification";
 
 export class ParentUseCase {
   private iparentRepository: IParentRepository;
@@ -343,48 +344,79 @@ export class ParentUseCase {
   }
   
   /*.............................................save parent and kids data....................................*/
-  async addParentandKids(parentData: IParent, child: IChild[]): Promise<{status: boolean; message?: string; child?: IChild[]}>{
-    try{
-      const savedParent = await this.iparentRepository.saveParent(parentData)
-      console.log('usecase',savedParent);
-      if (!savedParent) {
-        return { status: false, message: 'Failed to save parent' };
-      }
-      console.log(child);
-      
-      if (!Array.isArray(child) || child.length === 0) {
-        return { status: true, message: 'Parent details updated successfully without child data' };
-      }
+  async addParentandKids(
+    parentData: IParent,
+    childrenData: IChild[]
+): Promise<{ status: boolean; message?: string; child?: IChild[] }> {
+    try {
+        // Save the parent first
+        const savedParent = await this.iparentRepository.saveParent(parentData);
+        console.log('usecase', savedParent);
 
-      const parentId = new mongoose.Types.ObjectId(savedParent._id);
-      console.log('id',parentId);
-
-        const existingChild = await this.ichildRepository.validateChild(child,parentId)
-        console.log('exis',existingChild);
-        
-        if(existingChild){
-          return { status: false, message: 'Child data already exist in database '}
+        if (!savedParent) {
+            return { status: false, message: 'Failed to save parent' };
         }
 
-        const savedChildren = await this.ichildRepository.saveChild(child, parentId)
-        console.log('child data', savedChildren);
-        
+        if (!Array.isArray(childrenData) || childrenData.length === 0) {
+            return { status: true, message: 'Parent details updated successfully without child data' };
+        }
+
+        const parentId = new mongoose.Types.ObjectId(savedParent._id);
+
+        // Validate existing children
+        const existingChildren = await this.ichildRepository.validateChild(childrenData, parentId);
+        console.log('existing children', existingChildren);
+
+        const existingChildrenArray = existingChildren ?? [];
+        // Filter out children that already exist in the database
+        const newChildren = childrenData.filter(child =>
+            !existingChildrenArray.some(existing =>
+                existing.name === child.name &&
+                existing.age === child.age &&
+                existing.gender === child.gender
+            )
+        );
+
+        // If no new children to save
+        if (newChildren.length === 0) {
+            return { status: false, message: 'All provided child data already exists in the database' };
+        }
+
+        // Save only new children
+        const savedChildren = await this.ichildRepository.saveChild(newChildren, parentId);
+        console.log('Saved child data', savedChildren);
+
         if (!savedChildren) {
-          return { status: false, message: 'Failed to save children' };
-      }
-      
-    
-      return {status: true, message: 'Updated data successfully', child: savedChildren}
-    } catch(error){
-      return {status: false, message: 'Failure to update data'}
+            return { status: false, message: 'Failed to save children' };
+        }
+
+        const childIds = savedChildren.map(child => new mongoose.Types.ObjectId(child._id));
+
+        // Update parent with children IDs
+        const updatedParent = await this.iparentRepository.updateParentChildren(parentId, childIds);
+        if (!updatedParent) {
+            return { status: false, message: 'Failed to update parent with children' };
+        }
+
+        return { status: true, message: 'Updated data successfully', child: savedChildren };
+    } catch (error) {
+        console.error('Error:', error);
+        return { status: false, message: 'Failure to update data' };
     }
-  }
+}
+
 
   /*...........................................remove kid data with id..................................*/
-  async deleteKidById(id: string): Promise<{status: boolean; message?: string}>{
+  async deleteKidById(id: string, parentId: string): Promise<{status: boolean; message?: string}>{
     try{
       const deletekid = await this.ichildRepository.deleteById(id)
       if (!deletekid) return { status: false, message: 'Kid not found' };
+
+      const kidId = new mongoose.Types.ObjectId(id);
+      const updatedParent = await this.iparentRepository.updateParentOnDelete(kidId,parentId)
+      if (!updatedParent) {
+        return { status: false, message: 'Failed to update parent with kid removal' };
+      }
       return { status: true, message: 'Kid deleted successfully' };
     } catch(error){
       return { status: false, message: 'Server error' };
@@ -443,6 +475,32 @@ async findDoctor(id: string): Promise<{status: boolean; message?: string; data?:
     return { status: false, message: 'An error occurred during data fetching'};
 }
 
+}
+
+/*..............................................fetching notifications...................................*/
+async fetchingNotifications(id: string): Promise<{status: boolean; message?: string; data?: INotification[]}>{
+  try{
+    const res = await this.iparentRepository.getNotifications(id)
+    if(res) return{status:true, message: 'Fetched Notifications', data: res}
+    return {status:false, message: 'Failed to fetch notifications'}
+  } catch (error) {
+    return { status: false, message: "An error occured during fetching"}
+  }
+}
+
+/*........................................make read.............................................*/
+async updateNotification(id: string): Promise<{status: boolean; message?: string}>{
+  try{
+    console.log('usecase',id);
+    
+    const res = await this.iparentRepository.makeRead(id)
+    console.log(res);
+    
+    if(res) return{status:true, message: 'Read the Notification'}
+    return {status:false, message: 'Failed to make READ'}
+  } catch (error) {
+    return { status: false, message: "An error occured during fetching"}
+  }
 }
 
 }

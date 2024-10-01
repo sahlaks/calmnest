@@ -6,6 +6,7 @@ import { verifyRefreshToken } from "../infrastructure/services/tokenVerification
 import { jwtCreation } from "../infrastructure/services/JwtCreation";
 import { uploadImage } from "../infrastructure/services/cloudinaryService";
 import mongoose from "mongoose";
+import { Auth } from "aws-sdk/clients/docdbelastic";
 
 export class ParentController {
   constructor(private ParentUseCase: ParentUseCase) {}
@@ -464,13 +465,14 @@ export class ParentController {
 
   /*.............................................remove child data...........................................*/
   async deleteChildData(
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> {
     const id = req.params.id;
+    const parentId = req.user?.id as string
     try {
-      const result = await this.ParentUseCase.deleteKidById(id);
+      const result = await this.ParentUseCase.deleteKidById(id,parentId);
       if (!result.status)
         return res
           .status(404)
@@ -552,6 +554,33 @@ export class ParentController {
         next(error)
       }
     }
+
+    /*...........................................notifications...............................................*/
+    async getNotifications(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+      const parentId = req.params.id as string
+      try{
+        const result = await this.ParentUseCase.fetchingNotifications(parentId)
+        if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+        return res.status(400).json({success: false, message: result.message})
+      } catch(error) {
+        next(error)
+      }
+    }
+
+    /*................................................read notification....................................*/
+    async changeToRead(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+      const { notificationId } = req.body;
+      console.log(notificationId);
+      
+      try{
+        const result = await this.ParentUseCase.updateNotification(notificationId)
+        if(result.status) return res.status(200).json({success: true, message: result.message})
+        return res.status(400).json({success: false, message: result.message})
+      } catch(error) {
+        next(error)
+      }
+    }
+
 
   /*...............................logout.................................*/
   async logoutUser(

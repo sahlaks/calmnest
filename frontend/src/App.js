@@ -31,6 +31,10 @@ import PlanningSlots from "./Pages/Doctor/Planner/PlanningSlots";
 import Planner from "./Pages/Doctor/Planner/Planner";
 import TimeSlotForm from "./Components/TimeSlots/TimeSlotsForm";
 import ConfirmAppointment from "./Pages/Parent/AppointmentDetails/ConfirmAppointment";
+import PaymentSuccess from "./Pages/Parent/AppointmentDetails/PaymentSuccess";
+import PaymentFailure from "./Pages/Parent/AppointmentDetails/PaymentFailure";
+import ShowAppointments from "./Pages/Parent/AppointmentDetails/ShowAppointments";
+import Consultation from "./Pages/Doctor/Consultation/Consultation";
 
 function App() {
   return (
@@ -124,6 +128,32 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/paymentsuccess"
+        element={
+          <ProtectedRoute allowedRoles={["parent"]}>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/paymentfailure"
+        element={
+          <ProtectedRoute allowedRoles={["parent"]}>
+            <PaymentFailure />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/appointments"
+        element={
+          <ProtectedRoute allowedRoles={["parent"]}>
+            <ShowAppointments />
+          </ProtectedRoute>
+        }
+      />
+    
+
 
       <Route
         path="/doctor-login"
@@ -195,6 +225,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["doctor"]}>
             <TimeSlotForm />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/consultation"
+        element={
+          <ProtectedRoute allowedRoles={["doctor"]}>
+            <Consultation />
           </ProtectedRoute>
         }
       />

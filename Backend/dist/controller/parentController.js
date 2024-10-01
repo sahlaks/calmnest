@@ -429,9 +429,11 @@ class ParentController {
     /*.............................................remove child data...........................................*/
     deleteChildData(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const id = req.params.id;
+            const parentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             try {
-                const result = yield this.ParentUseCase.deleteKidById(id);
+                const result = yield this.ParentUseCase.deleteKidById(id, parentId);
                 if (!result.status)
                     return res
                         .status(404)
@@ -503,6 +505,37 @@ class ParentController {
                     res.status(200).json({ success: true, message: result.message, child: result.child });
                 else
                     res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*...........................................notifications...............................................*/
+    getNotifications(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const parentId = req.params.id;
+            try {
+                const result = yield this.ParentUseCase.fetchingNotifications(parentId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message, data: result.data });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*................................................read notification....................................*/
+    changeToRead(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { notificationId } = req.body;
+            console.log(notificationId);
+            try {
+                const result = yield this.ParentUseCase.updateNotification(notificationId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message });
+                return res.status(400).json({ success: false, message: result.message });
             }
             catch (error) {
                 next(error);

@@ -13,7 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorRepository = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const doctorModel_1 = __importDefault(require("../databases/doctorModel"));
+const notificationModel_1 = __importDefault(require("../databases/notificationModel"));
 class DoctorRepository {
     /*..........................................verify with email.............................................*/
     findDoctorByEmail(email) {
@@ -63,10 +65,26 @@ class DoctorRepository {
         });
     }
     /*........................................find all doctors.........................................*/
-    findDoctor() {
+    findDoctor(searchQuery, skip, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const doctors = yield doctorModel_1.default.find();
-            return doctors;
+            return yield doctorModel_1.default.find({ doctorName: { $regex: searchQuery, $options: 'i' } })
+                .skip(skip)
+                .limit(limit);
+        });
+    }
+    countDocuments(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield doctorModel_1.default.countDocuments({ doctorName: { $regex: query, $options: 'i' } });
+        });
+    }
+    countAll() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield doctorModel_1.default.countDocuments();
+        });
+    }
+    collectDocData(skip, limit) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield doctorModel_1.default.find().skip(skip).limit(limit);
         });
     }
     /*................................................find by Id.................................................*/
@@ -107,6 +125,54 @@ class DoctorRepository {
             catch (error) {
                 console.error("Error updating doctor", error);
                 return null;
+            }
+        });
+    }
+    /*............................update doctor with appointment...............................................*/
+    updateDoctorwithApointment(id, doctorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const appointmentObjectId = new mongoose_1.default.Types.ObjectId(id);
+            try {
+                const res = yield doctorModel_1.default.findByIdAndUpdate(doctorId, { $addToSet: { appointments: appointmentObjectId } }, { new: true });
+                console.log(res);
+                if (res) {
+                    console.log("Doctor updated successfully with appointment ID");
+                    return true;
+                }
+                else {
+                    console.log("Doctor not found or update failed");
+                    return false;
+                }
+            }
+            catch (error) {
+                console.error("Error updating doctor", error);
+                return false;
+            }
+        });
+    }
+    /*..............................................all notifications.............................................*/
+    getNotifications(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const notifications = yield notificationModel_1.default.find({ doctorId: id, toParent: false }).sort({ createdAt: -1 });
+                console.log(notifications);
+                return notifications;
+            }
+            catch (error) {
+                return null;
+            }
+        });
+    }
+    /*........................................update to read................................................*/
+    makeRead(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const notifications = yield notificationModel_1.default.findByIdAndUpdate(id, { $set: { isRead: true } });
+                console.log(notifications);
+                return true;
+            }
+            catch (error) {
+                return false;
             }
         });
     }

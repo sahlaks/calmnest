@@ -20,6 +20,7 @@ const parentRoutes_1 = __importDefault(require("../routes/parentRoutes"));
 const doctorRoutes_1 = __importDefault(require("../routes/doctorRoutes"));
 const adminRoutes_1 = __importDefault(require("../routes/adminRoutes"));
 const doctorModel_1 = __importDefault(require("../databases/doctorModel"));
+const path_1 = __importDefault(require("path"));
 const createServer = () => {
     try {
         const app = (0, express_1.default)();
@@ -40,6 +41,7 @@ const createServer = () => {
         }));
         app.use(express_1.default.json());
         app.use(express_1.default.urlencoded({ extended: true }));
+        app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
         app.use('/api/parents', parentRoutes_1.default);
         app.use('/api/doctor', doctorRoutes_1.default);
         app.use('/api/admin', adminRoutes_1.default);

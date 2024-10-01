@@ -16,8 +16,7 @@ export class AdminController{
         res.cookie('access_token',admin.token,{httpOnly: true})
         res.json({ success: true, message: admin.message, data: admin.data });
         } catch (error) {
-            console.error('Error during admin login:', error);
-            res.status(500).json({ message: 'Internal Server Error' });
+            next(error)
         }
     }
 
@@ -25,8 +24,11 @@ export class AdminController{
     /*.........................................parents data.......................................................*/
     async fetchParents(req: Request, res: Response, next: NextFunction): Promise<Response | void>{
         try{
-            const parents = await this.AdminUsecase.collectParentData();
-            if(parents) return res.status(200).json({success: true, message: parents.message, data: parents.data});
+          const page = parseInt(req.query.page as string) || 1;
+          const limit = parseInt(req.query.limit as string) || 6;
+      
+            const parents = await this.AdminUsecase.collectParentData(page,limit);
+            if(parents) return res.status(200).json({success: true, message: parents.message, data: parents.data,  totalPages: parents.totalPages});
             else return res.status(400).json({success: false, message: 'No data available'})
           } catch (error) {
             next(error);
@@ -60,8 +62,19 @@ export class AdminController{
     /*................................................get all doctors....................................*/
     async fetchdoctors(req: Request, res: Response, next: NextFunction): Promise<Response | void>{
         try{
-        const doctor = await this.AdminUsecase.collectDoctorData();
-        if(doctor) return res.status(200).json({success: true, message: doctor.message, data: doctor.data});
+          const searchQuery = req.query.search as string || '';
+          const page = parseInt(req.query.page as string) || 1; 
+          const limit = parseInt(req.query.limit as string) || 6;
+          let doctors, totalDoctors
+          if (searchQuery) {
+            doctors = await this.AdminUsecase.collectDoctorData(searchQuery, page, limit);
+            totalDoctors = await this.AdminUsecase.countSearchResults(searchQuery);
+          } else {
+            doctors = await this.AdminUsecase.collectDocData(page, limit);
+            totalDoctors = await this.AdminUsecase.countAllDoctors();
+          }
+        if(doctors) return res.status(200).json({success: true, data: doctors.data,  totalPages: Math.ceil(totalDoctors / limit),
+          currentPage: page,});
         else return res.status(400).json({success: false, message: 'No data available'})
       } catch (error) {
         next(error);
@@ -85,10 +98,10 @@ export class AdminController{
     try {
         const { id } = req.params;
         const result = await this.AdminUsecase.verifyDoctorwithId(id);
-        if (result.status) return res.status(201).json({ success: true, data: result.data });
+        if (result.status) return res.status(201).json({ success: true, message: result.message, data: result.data });
         else return res.status(400).json({ success: false, message: result.message });
       } catch (error) {
-        res.status(500).json({ message: 'Error verifying doctor', error });
+        next(error)
       }
     }
 
@@ -100,8 +113,22 @@ export class AdminController{
             if (result.status) return res.status(201).json({ success: true, data: result.data });
             else return res.status(400).json({ success: false, message: result.message });
           } catch (error) {
-            res.status(500).json({ message: 'Error verifying doctor', error });
+            next(error)
           }
         }
+
     
+    /*.........................................reject a profile.........................................*/
+    async rejectDoctor(req: Request, res: Response, next: NextFunction): Promise<Response | void>{
+    try{
+      const {id} = req.params
+      const result = await this.AdminUsecase.rejectWithId(id)
+      if(result.status) return res.status(201).json({ success: true, message: result.message});
+      else return res.status(400).json({ success: false, message: result.message });
+    } catch (error) {
+      next(error)
+    }    
+}
+
+
 }

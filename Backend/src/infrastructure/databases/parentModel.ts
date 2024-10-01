@@ -47,7 +47,9 @@ const parentSchema: Schema<IParent> = new mongoose.Schema({
   },
   country: {
     type: String,
-  }
+  },
+  children: [{ type: Schema.Types.ObjectId, ref: 'Child' }],
+  appointments: [{type: Schema.Types.ObjectId, ref: 'Appointment'}]
 },
   {
     timestamps: true

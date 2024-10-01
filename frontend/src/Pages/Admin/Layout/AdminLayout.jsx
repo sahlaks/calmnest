@@ -12,7 +12,7 @@ const AdminLayout = ({ children }) => {
       
       {/* Main content area */}
       <div className="flex flex-col w-full">
-        <main className="p-20">
+        <main className="flex-1 p-20">
           {children}
         </main>
       </div>

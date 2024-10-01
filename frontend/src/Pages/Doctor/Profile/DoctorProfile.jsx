@@ -34,6 +34,7 @@ import {
 } from "../../../utils/profileValidation";
 import ImageCropperModal from "../../../Services/imageCroper";
 import DoctorChangePassword from "../ChnangePassword/ChangePassword";
+import DoctorHeader from "../../../Components/Header/DoctorHeader";
 
 const DoctorProfile = () => {
   const [user, setUser] = useState(null);
@@ -66,6 +67,8 @@ const DoctorProfile = () => {
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [open, setOpen] = useState(false);
+  const [bio, setBio] = useState('');
+  const [bioError, setBioError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -93,6 +96,7 @@ const DoctorProfile = () => {
         setState(data.state || "");
         setCountry(data.country || "");
         setImage(data.image || "")
+        setBio(data.bio || "")
       } catch (err) {
         console.error("Error fetching doctor data:", err);
         setError("Failed to load doctor data");
@@ -157,6 +161,14 @@ const DoctorProfile = () => {
     navigate("/");
   };
 
+  const validateBio = (value) => {
+    if (!value.trim()) {
+      return 'Bio should not be empty'
+    } else {
+      return '';
+    }
+  };
+
   const handleSubmit = async () => {
     const nameError = validateName(name);
     const emailError = validateEmail(email);
@@ -169,6 +181,7 @@ const DoctorProfile = () => {
     const cityError = validateCity(city);
     const stateError = validateState(state);
     const countryError = validateCountry(country);
+    const bioError = validateBio(bio);
 
     setNameError(nameError);
     setEmailError(emailError);
@@ -181,6 +194,7 @@ const DoctorProfile = () => {
     setCityError(cityError);
     setStateError(stateError);
     setCountryError(countryError);
+    setBioError(bioError);
 
     if (
       !nameError &&
@@ -193,7 +207,8 @@ const DoctorProfile = () => {
       !streetError &&
       !cityError &&
       !stateError &&
-      !countryError
+      !countryError &&
+      !bioError
     ) {
       try {
         setLoading(true);
@@ -210,6 +225,7 @@ const DoctorProfile = () => {
         formData.append("city", city);
         formData.append("state", state);
         formData.append("country", country);
+        formData.append("bio", bio); 
 
         if (image) {
           formData.append("image", selectedImage);
@@ -247,7 +263,7 @@ const DoctorProfile = () => {
 
   return (
     <div className="min-h-screen p-6 flex flex-col items-center justify-center">
-      <HeaderSwitcher />
+      <DoctorHeader />
       {loading ? (
         <Loading />
       ) : (
@@ -346,6 +362,28 @@ const DoctorProfile = () => {
                           </p>
                         )}
                       </div>
+
+                      <div className="md:col-span-2">
+                        <label className="text-[#323232]-400" htmlFor="bio">
+                        Bio
+                        </label>
+                        <textarea
+                          style={{ fontWeight: "bold", color: "black" }}
+                          name="bio"
+                          id="bio"
+                          className={`h-32 border mt-1 rounded-xl px-4 w-full ${bioError ? "border-red-500" : "bg-gray-50"}`}
+                          value={bio}
+                          onChange={(e) => {
+                            setBio(e.target.value);
+                            validateBio(e.target.value);
+                          }}
+                          />
+                          {bioError && (
+                          <p className="text-red-500 text-xs mt-1">
+                          {bioError}
+                          </p>)}
+                      </div>
+
 
                       <div style={{ position: "relative" }}>
                         <div>

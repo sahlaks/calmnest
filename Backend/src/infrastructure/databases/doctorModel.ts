@@ -66,6 +66,10 @@ const doctorSchema: Schema<IDoctor> = new mongoose.Schema({
     document: {
         type: String
     },
+    bio: {
+        type: String
+    },
+    appointments: [{ type: Schema.Types.ObjectId, ref: 'Appointment' }],
     },
     {
         timestamps: true 

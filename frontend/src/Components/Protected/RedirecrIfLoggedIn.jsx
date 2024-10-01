@@ -6,7 +6,6 @@ const RedirectIfLoggedIn = ({ children }) => {
   const isLoggin = useSelector((state) => state.auth.isLoggin);
   const role = useSelector((state) => state.auth.role);
 
-  // Redirect based on role if the user is already logged in
   if (isLoggin) {
     switch (role) {
       case 'parent':
@@ -20,7 +19,7 @@ const RedirectIfLoggedIn = ({ children }) => {
     }
   }
 
-  // If not logged in, render the children (login/signup pages)
+
   return children;
 };
 

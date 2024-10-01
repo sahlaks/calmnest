@@ -346,5 +346,63 @@ class DoctorUseCase {
             }
         });
     }
+    /*.........................................change availability....................................*/
+    changeAvailabilityWithId(slotId, doctorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const updatedSlot = yield this.islotRepository.updateSlot(slotId, doctorId);
+                if (!updatedSlot)
+                    return { status: false, message: "Slot not found or unauthorized access", };
+                return { status: true, message: "Slot availability updated successfully", data: updatedSlot };
+            }
+            catch (error) {
+                return { status: false, message: "An error occurred while updating the slot availability" };
+            }
+        });
+    }
+    /*..............................................delete a slot..............................................*/
+    deleteSlotWithId(slotId, doctorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const updatedSlot = yield this.islotRepository.deleteSlot(slotId, doctorId);
+                if (!updatedSlot)
+                    return { status: false, message: "Slot not found or unauthorized access", };
+                return { status: true, message: "Slot deleted successfully" };
+            }
+            catch (error) {
+                return { status: false, message: "An error occurred while deleting the slot availability" };
+            }
+        });
+    }
+    /*..............................................fetching notifications...................................*/
+    fetchingNotifications(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const res = yield this.idoctorRepository.getNotifications(id);
+                if (res)
+                    return { status: true, message: 'Fetched Notifications', data: res };
+                return { status: false, message: 'Failed to fetch notifications' };
+            }
+            catch (error) {
+                return { status: false, message: "An error occured during fetching" };
+            }
+        });
+    }
+    /*........................................make read.............................................*/
+    updateNotification(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log('usecase', id);
+                const res = yield this.idoctorRepository.makeRead(id);
+                console.log(res);
+                if (res)
+                    return { status: true, message: 'Read the Notification' };
+                return { status: false, message: 'Failed to make READ' };
+            }
+            catch (error) {
+                return { status: false, message: "An error occured during fetching" };
+            }
+        });
+    }
 }
 exports.DoctorUseCase = DoctorUseCase;

@@ -1,4 +1,5 @@
 import React from 'react';
+import './Pagination.css'
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pages = [];
@@ -15,7 +16,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     }
   };
   return (
-    <div className="pagination">
+    <div className="pagination" style={{marginTop:'50px'}}>
       <button 
         className="pagination-btn" 
         onClick={handlePrev} 

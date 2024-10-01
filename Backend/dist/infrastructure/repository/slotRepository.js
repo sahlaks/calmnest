@@ -60,5 +60,36 @@ class SlotRepository {
             }
         });
     }
+    /*..................................update Slot availability......................................*/
+    updateSlot(slotId, doctorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const slot = yield slotModel_1.default.findById(slotId);
+                if (slot) {
+                    if (slot.doctorId.toString() !== doctorId)
+                        return null;
+                    slot.isAvailable = false;
+                    yield slot.save();
+                    return slot;
+                }
+                return null;
+            }
+            catch (error) {
+                return null;
+            }
+        });
+    }
+    /*.........................................delete slot................................*/
+    deleteSlot(slotId, doctorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const deletedSlot = yield slotModel_1.default.findOneAndDelete({ _id: slotId, doctorId: doctorId });
+                return deletedSlot;
+            }
+            catch (error) {
+                return null;
+            }
+        });
+    }
 }
 exports.SlotRepository = SlotRepository;

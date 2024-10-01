@@ -18,7 +18,7 @@ const slotSchema: Schema<ISlot> = new mongoose.Schema({
     },
     doctorId:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Parent'
+        ref: 'Doctor'
     },
     },
         { timestamps: true }

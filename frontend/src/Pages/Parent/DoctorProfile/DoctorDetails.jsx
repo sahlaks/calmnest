@@ -47,7 +47,7 @@ function DoctorDetails() {
   const handleAppointment = () => {
     if(selectedSlot && doctor){
       console.log('booking slot',selectedSlot)
-      toast.success(`Appointment booked for ${selectedSlot.date} at ${selectedSlot.startTime}`, {
+      toast.success(`Appointment selected for ${selectedSlot.date} at ${selectedSlot.startTime}`, {
         className : 'custom-toast',
       });
       navigate('/confirm-appointment',{
@@ -64,13 +64,13 @@ function DoctorDetails() {
     <>
       <HeaderSwitcher />
 
-      <div className="flex justify-center items-center min-h-screen mt-10 md:mt-15">
+      <div className="flex justify-center items-center min-h-screen mt-20 md:mt-10">
         {loading ? (
           <Loading />
         ) : (
           <div className="flex flex-col md:flex-row max-w-6xl w-full items-center justify-center">
             {/*Doctor Details */}
-            <div className=" flex flex-col bg-[#DDD0C8] shadow-lg rounded-lg items-center p-6 m-5">
+            <div className=" flex flex-col bg-[#DDD0C8] shadow-lg rounded-lg items-center m-5 w-full md:w-1/2 ml-5 md:ml-5 mr-5 md:mr-5 min-w-[300px] p-2">
             <h2 className="text-2xl font-semibold text-center">
                 Details of Selected Doctor
               </h2>
@@ -83,13 +83,13 @@ function DoctorDetails() {
               {/* Doctor details centered */}
               <div className="text-center">
                 <h2 className="text-3xl font-bold">Dr. {doctor?.doctorName}</h2>
-                <p className="text-gray-600 mt-2">{doctor?.specialization}</p>
+                <p className="text-xl text-gray-600 mt-2">{doctor?.specialization}</p>
                 <p className="mt-4">{doctor?.bio}</p>
               </div>
             </div>
 
             {/* Right side: Available Slots */}
-            <div className=" flex flex-col p-6 bg-[#DDD0C8] shadow-lg rounded-lg items-center">
+            <div className=" flex flex-col p-6 bg-[#DDD0C8] shadow-lg rounded-lg items-center w-full md:w-1/2 min-w-[300px]">
               <h2 className="text-2xl font-semibold text-center">
                 Choose an Appointment Slot
               </h2>

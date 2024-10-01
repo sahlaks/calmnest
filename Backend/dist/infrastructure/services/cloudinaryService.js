@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadImage = void 0;
+exports.uploadDocumentFile = exports.uploadImage = void 0;
 const cloudinary_1 = __importDefault(require("./cloudinary"));
 // Upload image function
 const uploadImage = (fileBuffer_1, folderName_1, ...args_1) => __awaiter(void 0, [fileBuffer_1, folderName_1, ...args_1], void 0, function* (fileBuffer, folderName, resourceType = 'raw') {
@@ -41,3 +41,31 @@ const uploadImage = (fileBuffer_1, folderName_1, ...args_1) => __awaiter(void 0,
     }
 });
 exports.uploadImage = uploadImage;
+const uploadDocumentFile = (fileBuffer, folderName) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield new Promise((resolve, reject) => {
+            cloudinary_1.default.uploader.upload_stream({
+                folder: folderName,
+                resource_type: 'raw', // raw for non-image files like PDF
+                format: 'pdf',
+                upload_preset: 'ml_default' // Make sure to specify 'pdf' format
+            }, (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(result);
+            }).end(fileBuffer);
+        });
+        if (result.secure_url) {
+            return result.secure_url;
+        }
+        else {
+            throw new Error('Failed to upload document');
+        }
+    }
+    catch (error) {
+        console.error('Cloudinary upload error:', error);
+        throw new Error('Failed to upload document to Cloudinary');
+    }
+});
+exports.uploadDocumentFile = uploadDocumentFile;

@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 import { ISlotRepository } from "./interface/ISlotRepository";
 import ISlot from "../domain/entity/slots";
 import { SlotRepository } from "../infrastructure/repository/slotRepository";
+import INotification from "../domain/entity/notification";
 
 export class DoctorUseCase {
   private idoctorRepository: IDoctorRepository;
@@ -368,6 +369,56 @@ export class DoctorUseCase {
       return { status: false, message: "Failed to fetch slots" };
     }
   }
+
+  /*.........................................change availability....................................*/
+  async changeAvailabilityWithId(slotId: string,doctorId: string): Promise<{status: boolean; message?: string; data?: ISlot}>{
+    try{
+      const updatedSlot = await this.islotRepository.updateSlot(slotId,doctorId)
+      if (!updatedSlot) return { status: false, message: "Slot not found or unauthorized access",}
+      return { status: true, message: "Slot availability updated successfully", data: updatedSlot}
+    }catch(error){
+      return { status: false, message: "An error occurred while updating the slot availability"};
+    }
+  }
+
+  /*..............................................delete a slot..............................................*/
+  async deleteSlotWithId(slotId: string, doctorId: string): Promise<{status: boolean; message?: string;}>{
+    try{
+      const updatedSlot = await this.islotRepository.deleteSlot(slotId,doctorId)
+      if (!updatedSlot) return { status: false, message: "Slot not found or unauthorized access",}
+      return { status: true, message: "Slot deleted successfully"}
+    }catch(error){
+      return { status: false, message: "An error occurred while deleting the slot availability"};
+    }
+  
+  }
+
+/*..............................................fetching notifications...................................*/
+async fetchingNotifications(id: string): Promise<{status: boolean; message?: string; data?: INotification[]}>{
+  try{
+    const res = await this.idoctorRepository.getNotifications(id)
+    if(res) return{status:true, message: 'Fetched Notifications', data: res}
+    return {status:false, message: 'Failed to fetch notifications'}
+  } catch (error) {
+    return { status: false, message: "An error occured during fetching"}
+  }
+}
+
+/*........................................make read.............................................*/
+async updateNotification(id: string): Promise<{status: boolean; message?: string}>{
+  try{
+    console.log('usecase',id);
+    
+    const res = await this.idoctorRepository.makeRead(id)
+    console.log(res);
+    
+    if(res) return{status:true, message: 'Read the Notification'}
+    return {status:false, message: 'Failed to make READ'}
+  } catch (error) {
+    return { status: false, message: "An error occured during fetching"}
+  }
+}
+
 }
 
 

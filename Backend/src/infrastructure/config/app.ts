@@ -7,6 +7,7 @@ import parentRouter from '../routes/parentRoutes';
 import doctorRouter from '../routes/doctorRoutes';
 import adminRouter from '../routes/adminRoutes';
 import doctorModel from '../databases/doctorModel';
+import path from 'path';
 
 
 
@@ -35,6 +36,7 @@ const createServer = () => {
     
     app.use(express.json())
     app.use(express.urlencoded({ extended: true }))
+    app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
     app.use('/api/parents',parentRouter)
     app.use('/api/doctor', doctorRouter)

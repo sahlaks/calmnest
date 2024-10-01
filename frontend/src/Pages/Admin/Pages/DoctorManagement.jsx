@@ -1,22 +1,50 @@
-import React, { useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import AdminLayout from '../Layout/AdminLayout';
-import { blockDoctor, deleteDoctor, fetchDoctors, verifyDoctor } from '../../../Services/API/AdminAPI';
-import { toast } from 'react-toastify';
-import Loading from '../../../Components/Loading/Loading';
-import { TrashIcon, BanIcon, CheckCircleIcon, XCircleIcon, CheckIcon, XIcon } from '@heroicons/react/solid';
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../Layout/AdminLayout";
+import {
+  blockDoctor,
+  deleteDoctor,
+  fetchDoctors,
+  rejectDoctor,
+  verifyDoctor,
+} from "../../../Services/API/AdminAPI";
+import { toast } from "react-toastify";
+import Loading from "../../../Components/Loading/Loading";
+import {
+  TrashIcon,
+  BanIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  CheckIcon,
+  XIcon,
+} from "@heroicons/react/solid";
+import CustomPopup from "../../../Components/CustomPopUp/CustomPopup";
+import DoctorProfileModal from "./DoctorProfileModal";
+import Pagination from "../../../Components/Pagination/Pagination";
+import Footer from "../../../Components/Footer/Footer";
 
 function DoctorManagement() {
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchDoctorData = async () => {
+  // Popup states
+  const [showPopup, setShowPopup] = useState(false);
+  const [actionType, setActionType] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const fetchDoctorData = async (query = "", page = 1, limit = 6) => {
     setLoading(true);
     try {
-      const response = await fetchDoctors();
+      const response = await fetchDoctors(query, page, limit);
       if (response.data.success) {
         setDoctors(response.data.data);
+        setTotalPages(response.data.totalPages);
+        setCurrentPage(response.data.currentPage);
       } else {
         toast.error("Failed to fetch doctors");
       }
@@ -28,70 +56,124 @@ function DoctorManagement() {
     }
   };
 
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearch = () => {
+    fetchDoctorData(searchQuery, 1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchQuery("");
+    fetchDoctorData("");
+  };
+
+  const handlePageChange = (page) => {
+    fetchDoctorData(searchQuery, page);
+  };
+
   useEffect(() => {
     fetchDoctorData();
   }, []);
 
-  const handleBlock = async (e, id, isBlocked) => {
-    e.preventDefault();
+  const filteredDoctors = doctors.filter((doctor) => {
+    if (filter === "all") return true;
+    if (filter === "verified") return doctor.isVerified;
+    if (filter === "unverified") return !doctor.isVerified;
+    if (filter === "blocked") return doctor.isBlocked;
+    if (filter === "active") return !doctor.isBlocked;
+    return true;
+  });
 
-    try {
-      const res = await blockDoctor(id);
-      if (res.success) {
-        toast.success(isBlocked ? "Doctor unblocked" : "Doctor blocked");
-        setDoctors((prevDoctors) =>
-          prevDoctors.map((doctor) =>
-            doctor._id === id ? { ...doctor, isBlocked: !isBlocked } : doctor
-          )
-        );
-      }
-    } catch (err) {
-      console.log("Error blocking/unblocking doctor:", err);
-    }
+  const handleAction = (e, doctor, action) => {
+    e.preventDefault();
+    setSelectedDoctor(doctor);
+    setActionType(action);
+    setShowPopup(true);
   };
 
-  const handleVerify = async (e, id, isVerified) => {
-    e.preventDefault();
-    if (isVerified) return;
+  const handleConfirm = async () => {
+    if (!selectedDoctor) return;
 
     try {
-      const res = await verifyDoctor(id);
-      if (res.success) {
-        toast.success(isVerified ? "Doctor unverified" : "Doctor verified");
-        setDoctors((prevDoctors) =>
-          prevDoctors.map((doctor) =>
-            doctor._id === id ? { ...doctor, isVerified: !isVerified } : doctor
-          )
-        );
-      }
-    } catch (err) {
-      console.log("Error verifying/unverifying doctor:", err);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-      });
-      if (result.isConfirmed) {
-        const res = await deleteDoctor(id);
+      if (actionType === "block" || actionType === "unblock") {
+        const res = await blockDoctor(selectedDoctor._id);
         if (res.success) {
-          Swal.fire('Deleted!', 'Doctor has been deleted.', 'success');
+          toast.success(
+            selectedDoctor.isBlocked ? "Doctor unblocked" : "Doctor blocked"
+          );
+          setDoctors((prevDoctors) =>
+            prevDoctors.map((doctor) =>
+              doctor._id === selectedDoctor._id
+                ? { ...doctor, isBlocked: !selectedDoctor.isBlocked }
+                : doctor
+            )
+          );
+        }
+      } else if (actionType === "delete") {
+        const res = await deleteDoctor(selectedDoctor._id);
+        if (res.success) {
+          toast.success("Doctor deleted successfully");
           fetchDoctorData();
         } else {
-          Swal.fire('Error!', 'Failed to delete doctor.', 'error');
+          toast.error("Failed to delete doctor");
         }
       }
     } catch (err) {
-      console.error("Error during doctor deletion", err);
-      toast.error("An error occurred while deleting the doctor");
+      console.error(`Error ${actionType} doctor:`, err);
+      toast.error(`Error ${actionType} doctor`);
+    } finally {
+      setShowPopup(false);
+    }
+  };
+
+  const handleViewProfile = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowProfileModal(true);
+  };
+
+  const handleVerify = async () => {
+    if (!selectedDoctor) return;
+
+    try {
+      const res = await verifyDoctor(selectedDoctor._id);
+      if (res.success) {
+        // toast.success(selectedDoctor.isVerified ? "Doctor unverified" : "Doctor verified, send verification email");
+        setDoctors((prevDoctors) =>
+          prevDoctors.map((doctor) =>
+            doctor._id === selectedDoctor._id
+              ? { ...doctor, isVerified: !selectedDoctor.isVerified }
+              : doctor
+          )
+        );
+      } else {
+        toast.error("Failed to verify doctor");
+      }
+    } catch (err) {
+      console.error("Error verifying doctor:", err);
+      toast.error("Error verifying doctor");
+    } finally {
+      setShowPopup(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedDoctor) return;
+
+    try {
+      const res = await rejectDoctor(selectedDoctor._id);
+      if (res.success) {
+        toast.success("Doctor rejected successfully");
+        fetchDoctorData();
+      } else {
+        toast.error("Failed to reject doctor");
+      }
+    } catch (err) {
+      console.error("Error rejecting doctor:", err);
+      toast.error("Error rejecting doctor");
+    } finally {
+      setShowPopup(false);
     }
   };
 
@@ -108,15 +190,32 @@ function DoctorManagement() {
                   type="text"
                   placeholder="Search..."
                   className="px-4 py-2 w-full focus:outline-none"
+                  query=""
+                  onChange={handleSearchInput}
                 />
-                <button className="bg-[#323232] text-white px-4 py-2 hover:bg-[#323232]">
+                <button
+                  className="bg-[#323232] text-white px-4 py-2 hover:bg-[#323232]"
+                  onClick={handleSearch}
+                >
                   Search
                 </button>
+                {searchQuery && (
+                  <button
+                    className="ml-2 bg-red-500 text-white px-4 py-2 hover:bg-red-600"
+                    onClick={handleResetSearch}
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
 
               <div>
-                <select className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none">
-                  <option value="">Filter by</option>
+                <select
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option>Filter by</option>
                   <option value="all">All</option>
                   <option value="verified">Verified</option>
                   <option value="unverified">Unverified</option>
@@ -151,10 +250,13 @@ function DoctorManagement() {
                     <th className="border-r border-gray-300 px-4 py-2 text-center">
                       Action
                     </th>
+                    <th className="border-r border-gray-300 px-4 py-2 text-center">
+                      View Profile
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-300">
-                  {doctors.map((doctor, index) => (
+                  {filteredDoctors.map((doctor, index) => (
                     <tr key={doctor._id}>
                       <td className="border-r border-gray-300 px-4 py-2 text-center">
                         {index + 1}
@@ -196,21 +298,13 @@ function DoctorManagement() {
                       </td>
                       <td className="border-r border-gray-300 px-4 py-2 text-center">
                         <button
-                          className={`text-${doctor.isVerified ? 'red' : 'blue'}-600 hover:text-${doctor.isVerified ? 'red' : 'blue'}-800 ml-4`}
+                          className={`text-${doctor.isBlocked ? "green" : "red"}-600 hover:text-${doctor.isBlocked ? "green" : "red"}-800 ml-4`}
                           onClick={(e) =>
-                            handleVerify(e, doctor._id, doctor.isVerified)
-                          }
-                        >
-                          {doctor.isVerified ? (
-                            <XCircleIcon className="h-5 w-5 inline-block" />
-                          ) : (
-                            <CheckCircleIcon className="h-5 w-5 inline-block" />
-                          )}
-                        </button>
-                        <button
-                          className={`text-${doctor.isBlocked ? 'green' : 'red'}-600 hover:text-${doctor.isBlocked ? 'green' : 'red'}-800 ml-4`}
-                          onClick={(e) =>
-                            handleBlock(e, doctor._id, doctor.isBlocked)
+                            handleAction(
+                              e,
+                              doctor,
+                              doctor.isBlocked ? "unblock" : "block"
+                            )
                           }
                         >
                           {doctor.isBlocked ? (
@@ -221,9 +315,17 @@ function DoctorManagement() {
                         </button>
                         <button
                           className="text-red-600 hover:text-red-800 m-4"
-                          onClick={() => handleDelete(doctor._id)}
+                          onClick={(e) => handleAction(e, doctor, "delete")}
                         >
                           <TrashIcon className="h-5 w-5 inline-block" />
+                        </button>
+                      </td>
+                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                        <button
+                          className="text-blue-600 hover:text-red-800 m-4"
+                          onClick={() => handleViewProfile(doctor)}
+                        >
+                          Click here
                         </button>
                       </td>
                     </tr>
@@ -232,7 +334,7 @@ function DoctorManagement() {
               </table>
 
               <div className="md:hidden">
-                {doctors.map((doctor) => (
+                {filteredDoctors.map((doctor) => (
                   <div
                     key={doctor._id}
                     className="border border-[#FAF5E9]-500 shadow-lg p-4 mb-4"
@@ -244,28 +346,38 @@ function DoctorManagement() {
                       <strong>Email:</strong> {doctor.email}
                     </p>
                     <p>
-                      <strong>Verified:</strong> {doctor.isVerified ? 'Yes' : 'No'}
+                      <strong>Verified:</strong>{" "}
+                      {doctor.isVerified ? "Yes" : "No"}
                     </p>
                     <p>
-                      <strong>Block Status:</strong> {doctor.isBlocked ? 'Blocked' : 'Active'}
+                      <strong>Status:</strong>{" "}
+                      {doctor.isBlocked ? "Blocked" : "Active"}
                     </p>
                     <button
-                      className={`bg-${doctor.isBlocked ? 'green' : 'blue'}-500 text-white px-2 py-1 rounded`}
-                      onClick={(e) => handleBlock(e, doctor._id, doctor.isBlocked)}
+                      className={`bg-[#DDD0C8] px-2 py-1 rounded`}
+                      onClick={(e) =>
+                        handleAction(
+                          e,
+                          doctor,
+                          doctor.isBlocked ? "unblock" : "block"
+                        )
+                      }
                     >
                       {doctor.isBlocked ? "Unblock" : "Block"}
                     </button>
+
                     <button
-                      className={`bg-${doctor.isVerified ? 'red' : 'blue'}-500 text-white px-2 py-1 rounded ml-2`}
-                      onClick={(e) => handleVerify(e, doctor._id, doctor.isVerified)}
-                    >
-                      {doctor.isVerified ? "Unverify" : "Verify"}
-                    </button>
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                      onClick={() => handleDelete(doctor._id)}
+                      className="bg-[#DDD0C8] px-2 py-1 rounded ml-2"
+                      onClick={(e) => handleAction(e, doctor, "delete")}
                     >
                       Delete
+                    </button>
+
+                    <button
+                      className="bg-[#323232] text-white px-2 py-1 rounded ml-2"
+                      onClick={(e) => handleViewProfile(doctor)}
+                    >
+                      View Profile
                     </button>
                   </div>
                 ))}
@@ -274,6 +386,38 @@ function DoctorManagement() {
           </>
         )}
       </AdminLayout>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      
+      <div className="mt-0">
+        <Footer />
+      </div>
+
+      {showPopup && (
+        <CustomPopup
+          title={
+            actionType.charAt(0).toUpperCase() + actionType.slice(1) + " Doctor"
+          }
+          message={`Are you sure you want to ${actionType} this doctor?`}
+          onConfirm={handleConfirm}
+          onCancel={() => setShowPopup(false)}
+        />
+      )}
+
+      {showProfileModal && (
+        <DoctorProfileModal
+          doctor={selectedDoctor}
+          onClose={() => setShowProfileModal(false)}
+          onVerify={() => {
+            setActionType("verify");
+            handleVerify();
+          }}
+          onReject={handleReject}
+        />
+      )}
     </div>
   );
 }

@@ -9,11 +9,13 @@ const adminUsecases_1 = require("../../usecases/adminUsecases");
 const adminRepository_1 = require("../repository/adminRepository");
 const parentRepository_1 = require("../repository/parentRepository");
 const doctorRepository_1 = require("../repository/doctorRepository");
+const mailService_1 = __importDefault(require("../services/mailService"));
 const adminRouter = express_1.default.Router();
+const sendEmail = new mailService_1.default();
 const parentRepository = new parentRepository_1.ParentRepository();
 const doctorRepository = new doctorRepository_1.DoctorRepository();
 const adminRepository = new adminRepository_1.AdminRepository();
-const adminUsecase = new adminUsecases_1.AdminUseCase(adminRepository, parentRepository, doctorRepository);
+const adminUsecase = new adminUsecases_1.AdminUseCase(adminRepository, parentRepository, doctorRepository, sendEmail);
 const controller = new adminController_1.AdminController(adminUsecase);
 adminRouter.post('/admin-login', (req, res, next) => {
     controller.adminLogin(req, res, next);
@@ -38,5 +40,8 @@ adminRouter.post('/doctor/:id/verify', (req, res, next) => {
 });
 adminRouter.delete('/doctor/:id/delete', (req, res, next) => {
     controller.deleteDoctor(req, res, next);
+});
+adminRouter.post('/doctor/:id/reject', (req, res, next) => {
+    controller.rejectDoctor(req, res, next);
 });
 exports.default = adminRouter;

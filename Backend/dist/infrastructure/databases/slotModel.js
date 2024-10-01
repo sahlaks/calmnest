@@ -20,7 +20,7 @@ const slotSchema = new mongoose_1.default.Schema({
     },
     doctorId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Parent'
+        ref: 'Doctor'
     },
 }, { timestamps: true });
 const slotModel = mongoose_1.default.model('Slot', slotSchema);

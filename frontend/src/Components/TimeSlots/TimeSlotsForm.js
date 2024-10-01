@@ -7,7 +7,6 @@ import HeaderSwitcher from "../Header/HeadSwitcher";
 import Footer from "../Footer/Footer";
 import { useNavigate } from "react-router-dom";
 
-
 function TimeSlotForm() {
   const [selectedDates, setSelectedDates] = useState([]);
   const [timeSlots, setTimeSlots] = useState({});
@@ -16,9 +15,22 @@ function TimeSlotForm() {
   const [openSlots, setOpenSlots] = useState({});
   const [savedSlots, setSavedSlots] = useState([]);
   const [showSavedSlots, setShowSavedSlots] = useState(false);
-  const navigate = useNavigate()
-  
+  const navigate = useNavigate();
+
+  const resetTime = (date) => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    return newDate;
+  };
+
   const handleDateChange = (date) => {
+    const today = resetTime(new Date());
+
+    if (resetTime(date) < today) {
+      toast.error("Cannot select past dates.");
+      return;
+    }
+
     const alreadySelected = selectedDates.some(
       (selectedDate) => selectedDate.getTime() === date.getTime()
     );
@@ -31,7 +43,6 @@ function TimeSlotForm() {
     }
   };
 
-  
   const toggleSlotChooser = (date) => {
     const dateString = date.toDateString();
     setOpenSlots((prevOpenSlots) => ({
@@ -40,19 +51,25 @@ function TimeSlotForm() {
     }));
   };
 
-  
   const addTimeSlot = (e, date) => {
     e.preventDefault();
     const dateString = date.toDateString();
     const slot = { start: startTime, end: endTime };
 
-    // Validate 
     if (!startTime || !endTime) {
       toast.error("Please select both start time and end time.");
       return;
     }
     if (startTime >= endTime) {
       toast.error("Start time must be earlier than the end time.");
+      return;
+    }
+
+    const start = new Date(`1970-01-01T${startTime}:00`);
+    const end = new Date(`1970-01-01T${endTime}:00`);
+    const timeDiff = (end - start) / (1000 * 60 * 60);
+    if (timeDiff !== 1) {
+      toast.error("Time slot duration must be exactly 1 hour.");
       return;
     }
 
@@ -67,7 +84,6 @@ function TimeSlotForm() {
     setEndTime("");
   };
 
-  
   const removeSlot = (dateString, slotIndex) => {
     setTimeSlots((prevTimeSlots) => {
       const updatedSlots = [...prevTimeSlots[dateString]];
@@ -79,201 +95,197 @@ function TimeSlotForm() {
     });
   };
 
-  
+  const removeSavedSlot = (dateString, slotIndex) => {
+    setSavedSlots((prevSavedSlots) => {
+      return prevSavedSlots.map((slotData) => {
+        if (slotData.date === dateString) {
+          const updatedSlots = [...slotData.slots];
+          updatedSlots.splice(slotIndex, 1);
+          return { ...slotData, slots: updatedSlots };
+        }
+        return slotData;
+      }).filter((slotData) => slotData.slots.length > 0);
+    });
+  }
+
   const handleSaveSlots = () => {
     const slotsArray = Object.entries(timeSlots).map(([date, slots]) => ({
       date,
       slots,
     }));
-    if(slotsArray.length === 0){
-      toast.error('Select some time slots')
-      return
+    if (slotsArray.length === 0) {
+      toast.error("Select some time slots");
+      return;
     }
     setSavedSlots(slotsArray);
-    setShowSavedSlots(true)
+    setShowSavedSlots(true);
   };
 
   
-  const handleEditSlot = (dateIndex, slotIndex, startOrEnd, value) => {
-    const updatedSavedSlots = [...savedSlots];
-    updatedSavedSlots[dateIndex].slots[slotIndex][startOrEnd] = value;
-    setSavedSlots(updatedSavedSlots);
-  };
 
-  const handleSave = async () =>{
+  const handleSave = async () => {
     const slotsArray = Object.entries(timeSlots).map(([date, slots]) => ({
       date,
       slots,
     }));
-    console.log(slotsArray);
-    try{
+    try {
       const result = await saveTimeSlots(slotsArray);
-    if (result.success) {
-      toast.success('Time slots saved successfully');
-      navigate('/planner')
-    } else {
-      toast.error('Failed to save time slots');
-    }
-    }catch(err){
+      if (result.success) {
+        toast.success("Time slots saved successfully");
+        navigate("/planner");
+      } else {
+        toast.error("Failed to save time slots");
+      }
+    } catch (err) {
       console.log(err);
-      
     }
-    
-  }
+  };
 
   return (
     <>
-    <HeaderSwitcher/>
-    <div className="flex flex-col md:flex-row justify-center justify-around mt-20 mb-10">
-      
-      <div className="flex flex-col items-center p-8 border shadow ">
-        <h2 className="text-2xl font-bold mb-7 text-center text-gray-800">
-          Generate Time Slots for Multiple Dates
-        </h2>
+      <HeaderSwitcher />
+      <div className="flex flex-col md:flex-row justify-center justify-around mt-20 mb-10">
+        {/* Left Section: Time Slot Selector */}
+        <div className="flex flex-col items-center p-8 border shadow bg-[#DDD0C8]">
+          <h2 className="text-2xl font-bold mb-7 text-center text-gray-800">
+            Generate Time Slots for Multiple Dates
+          </h2>
 
-        <form>
-          <DatePicker
-            selected={null}
-            onChange={handleDateChange}
-            highlightDates={selectedDates}
-            inline
-            shouldCloseOnSelect={false}
-          />
+          <form>
+            <DatePicker
+              selected={null}
+              onChange={handleDateChange}
+              highlightDates={selectedDates}
+              inline
+              shouldCloseOnSelect={false}
+            />
 
-          <div className="mt-4 text-center">
-            <p className="text-xl font-bold">Selected Dates:</p>
-            <ul>
-              {selectedDates.map((date, index) => {
-                const dateString = date.toDateString();
-                return (
-                  <li key={index}>
-                    <div>
-                      <strong>{dateString}</strong>
-                      <button
-                        className="ml-2 text-blue-500"
-                        type="button"
-                        onClick={() => toggleSlotChooser(date)}
-                      >
-                        {openSlots[dateString] ? "Close" : "Add Slots"}
-                      </button>
-                    </div>
-
-                    {openSlots[dateString] && (
-                      <div className="mt-2 flex flex-col">
-                        <label className="mb-1">Start Time:</label>
-                        <input
-                          type="time"
-                          value={startTime}
-                          onChange={(e) => setStartTime(e.target.value)}
-                          className="border border-gray-300 px-2 py-1 rounded"
-                        />
-
-                        <label className="mt-2 mb-1">End Time:</label>
-                        <input
-                          type="time"
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
-                          className="border border-gray-300 px-2 py-1 rounded"
-                        />
-
+            <div className="mt-4 text-center">
+              <p className="text-xl font-bold">Selected Dates:</p>
+              <ul>
+                {selectedDates.map((date, index) => {
+                  const dateString = date.toDateString();
+                  return (
+                    <li key={index}>
+                      <div>
+                        <strong>{dateString}</strong>
                         <button
-                          className="mt-4 bg-[#323232] text-white px-4 py-2 rounded"
-                          onClick={(e) => addTimeSlot(e, date)}
+                          className="ml-2 text-blue-500"
+                          type="button"
+                          onClick={() => toggleSlotChooser(date)}
                         >
-                          Add Time Slot
+                          {openSlots[dateString] ? "Close" : "Add Slots"}
                         </button>
                       </div>
-                    )}
 
-                    {timeSlots[dateString] && (
-                      <ul className="mt-2">
-                        {timeSlots[dateString].map((slot, idx) => (
-                          <li key={idx} className="flex items-center">
-                            <span>
-                              {slot.start} - {slot.end}
-                            </span>
-                            <button
-                              type="button"
-                              className="ml-2 text-red-500"
-                              onClick={() => removeSlot(dateString, idx)}
-                            >
-                              ✖
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div className="flex justify-center mt-4">
-            <button
-              type="button"
-              onClick={handleSaveSlots}
-              className="bg-[#323232] text-white px-4 py-2 rounded"
-            >
-              Save Time Slots
-            </button>
-          </div>
-        </form>
-      </div>
+                      {openSlots[dateString] && (
+                        <div className="mt-2 flex flex-col">
+                          <label className="mb-1">Start Time:</label>
+                          <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="border border-gray-300 px-2 py-1 rounded"
+                          />
 
-      {/* Saved Slots Section */}
-      {showSavedSlots && (
-        <div className="flex flex-col p-8 mb-10">
+                          <label className="mt-2 mb-1">End Time:</label>
+                          <input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="border border-gray-300 px-2 py-1 rounded"
+                          />
+
+                          <button
+                            className="mt-4 bg-[#323232] text-white px-4 py-2 rounded"
+                            onClick={(e) => addTimeSlot(e, date)}
+                          >
+                            Add Time Slot
+                          </button>
+                        </div>
+                      )}
+
+                      {timeSlots[dateString] && (
+                        <ul className="mt-2">
+                          {timeSlots[dateString].map((slot, idx) => (
+                            <li key={idx} className="flex items-center">
+                              <span>
+                                {slot.start} - {slot.end}
+                              </span>
+                              <button
+                                type="button"
+                                className="ml-2 text-red-500"
+                                onClick={() => removeSlot(dateString, idx)}
+                              >
+                                ✖
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                onClick={handleSaveSlots}
+                className="bg-[#323232] text-white px-4 py-2 rounded"
+              >
+                Save Time Slots
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Right Section: Saved Time Slots */}
+        <div
+          className="flex flex-col md:w-1/2 p-8 mb-10 border bg-[#DDD0C8] shadow"
+          style={{ height: "400px", overflowY: "auto" }}
+        >
           <h2 className="text-2xl font-bold mb-7 text-center text-gray-800">
             Saved Time Slots
           </h2>
-            {savedSlots.map((slotData, dateIndex) => (
+
+          {savedSlots.length === 0 ? (
+            <p className="text-center text-[#323232]-500 text-xl">No slots selected.</p>
+          ) : (
+            savedSlots.map((slotData, dateIndex) => (
               <div key={dateIndex} className="mb-4">
                 <h3 className="text-lg font-bold">{slotData.date}</h3>
                 <ul>
-                  {slotData.slots.map((slot, slotIndex) => (
-                    <li key={slotIndex} className="mt-2">
-                      <label>Start Time: </label>
-                      <input
-                        type="time"
-                        value={slot.start}
-                        onChange={(e) =>
-                          handleEditSlot(
-                            dateIndex,
-                            slotIndex,
-                            "start",
-                            e.target.value
-                          )
-                        }
-                        className="border border-gray-300 px-2 py-1 rounded"
-                      />
-                      <label className="ml-2">End Time: </label>
-                      <input
-                        type="time"
-                        value={slot.end}
-                        onChange={(e) =>
-                          handleEditSlot(
-                            dateIndex,
-                            slotIndex,
-                            "end",
-                            e.target.value
-                          )
-                        }
-                        className="border border-gray-300 px-2 py-1 rounded"
-                      />
-                    </li>
-                  ))}
-                </ul>
+          {slotData.slots.map((slot, slotIndex) => (
+            <li key={slotIndex} className="mt-2 flex justify-between items-center">
+              <span>
+                {slot.start} - {slot.end}
+              </span>
+              <button
+                type="button"
+                className="ml-2 text-red-500"
+                onClick={() => removeSavedSlot(slotData.date, slotIndex)}
+              >
+                ✖
+              </button>
+            </li>
+          ))}
+        </ul>
               </div>
-            ))}
-          
+            ))
+          )}
 
-          <button className="bg-[#323232] text-white px-4 py-2 rounded mt-4" onClick={handleSave}>
-            Final Save
-          </button>
+          {savedSlots.length > 0 && (
+            <button
+              className="bg-[#323232] text-white px-4 py-2 rounded mt-4"
+              onClick={handleSave}
+            >
+              Final Save
+            </button>
+          )}
         </div>
-      )}
-    </div>
-    <Footer/>
+      </div>
+      <Footer />
     </>
   );
 }
