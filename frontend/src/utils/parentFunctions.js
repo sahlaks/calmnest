@@ -108,10 +108,10 @@ export const stripeCall = async (paymentData, details) => {
     ...paymentData,
     ...details,
   };
-  const response = await axiosInstance.post("/api/parents/create-checkout-session", requestBody,
+   const response = await axiosInstance.post("/api/parents/create-checkout-session", requestBody,
     {withCredentials: true}
-  );
-  return response
+   );
+   return response
 }
 
 /*............................................success update.......................................*/
@@ -138,9 +138,10 @@ export const updateFailure = async (sessionId) => {
 }
 
 /*...............................................get appointments.......................................*/
-export const getAppointments =  async() => {
+export const getAppointments =  async(page, limit) => {
   try{
-    const result = await axiosInstance.get('/api/parents/getappointments', { withCredentials: true });
+    const result = await axiosInstance.get('/api/parents/getappointments',{params: { page: page, 
+      limit: limit  } , withCredentials: true });
     return result.data
   }catch(error){
     console.error('Error in fetching appointments', error);
@@ -161,8 +162,50 @@ export const getNotifications = async (userId) =>{
 
 /*.....................................read or unread.........................................*/
 export const changeToRead = async (notificationId) => {
-  console.log(notificationId);
-  
-  const res = await axiosInstance.post('/api/parents/mark-notification-read', { notificationId }, {withCredentials: true});
-  console.log(res);
+  await axiosInstance.post('/api/parents/mark-notification-read', { notificationId }, {withCredentials: true});
+}
+
+/*......................................feedback submission..................................*/
+export const submitFeedback = async (feedback) => {
+  try{
+  const res = await axiosInstance.post('/api/parents/givefeedback', {feedback}, {withCredentials: true})
+  return res.data;
+  }catch(err){
+    console.log(err)
+  }
+}
+
+/*............................................search doctors.............................................*/
+export const fetchSearchResult = async (query) => {
+  try {
+    const response = await axiosInstance.get(`/api/parents/doctors?search=${query}`,{withCredentials:true});
+    return response.data
+  } catch (error) {
+    console.error("Error fetching doctor data:", error);
+  }
+};
+
+/*...........................................fetch messages..........................................*/
+export const fetchMessages = async (doctorId) => {
+  try {
+    const response = await axiosInstance.get(`/api/parents/fetchmessages?id=${doctorId}`,{withCredentials: true})
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+  }
+}
+
+/*...................................save message to backend..................................*/
+export const saveMessage = async (message) => {
+  try{
+    await axiosInstance.post(`/api/parents/savemessage`,{message},{withCredentials: true})   
+  }catch(err){
+    console.error("Error saving messages:", err);
+  }
+}
+
+/*..............................chat lists..................................*/
+export const fetchParentChats = async () => {
+  const res = await axiosInstance.get(`/api/parents/chatlists`,{withCredentials: true})   
+  return res.data
 }

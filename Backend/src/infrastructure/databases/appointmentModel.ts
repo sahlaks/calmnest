@@ -16,6 +16,7 @@ const appointmentSchema: Schema<IAppointment> = new mongoose.Schema({
     childId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Child'},
+    slotId: {type: String},
     date: {type: String},
     startTime: {type: String},
     endTime: {type: String},

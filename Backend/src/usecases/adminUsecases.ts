@@ -31,7 +31,7 @@ export class AdminUseCase {
             if (!isMatch) {
                 return { status: false, message: 'Invalid credentials'}
             }
-            const accessToken = jwtCreation(exist._id)
+            const accessToken = jwtCreation(exist._id, 'Admin')
             return { status: true, message: 'Admin logged successfully', data: exist, token: accessToken}
         } else {
             return {status: false, message: 'Admin not exists!'}
@@ -70,26 +70,26 @@ export class AdminUseCase {
     }
 
     /*.............................................collect doctor data...........................................*/
-    async collectDoctorData(query: string, page: number, limit: number): Promise<{status: boolean, message?: string, data?: IDoctor[]}> {
+    async collectDoctorData(query: string, page: number, limit: number, isVerified: boolean): Promise<{status: boolean, message?: string, data?: IDoctor[]}> {
         const skip = (page - 1) * limit;
-        const doctor = await this.doctorRepository.findDoctor(query, skip, limit)
+        const doctor = await this.doctorRepository.findDoctors(query, skip, limit, isVerified)
         if(doctor){
             return {status: true, message: 'Fetch Doctor Data Successfully', data: doctor}
         }
         return {status: false, message: 'No data available'}
     } 
 
-    async countSearchResults(query: string): Promise<number> {
-        return await this.doctorRepository.countDocuments(query)
+    async countSearchResults(query: string, isVerified: boolean): Promise<number> {
+        return await this.doctorRepository.countDocuments(query, isVerified)
     }
 
-    async countAllDoctors(): Promise<number>{
-        return await this.doctorRepository.countAll()
+    async countAllDoctors(isVerified: boolean): Promise<number>{
+        return await this.doctorRepository.countAll(isVerified)
     }
 
-    async collectDocData(page: number, limit: number): Promise<{data: IDoctor[]}>{
+    async collectDocData(page: number, limit: number,isVerified: boolean): Promise<{data: IDoctor[]}>{
         const skip = (page - 1) * limit;
-        const doctors = await this.doctorRepository.collectDocData(skip, limit);
+        const doctors = await this.doctorRepository.collectDocData(skip, limit, isVerified);
         return { data: doctors};
     }
 
@@ -135,13 +135,13 @@ export class AdminUseCase {
     }
 
     /*.............................find and rejct..................................................... */
-    async rejectWithId(id: string): Promise<{status: boolean; message?: string}>{
+    async rejectWithId(id: string, reason: string): Promise<{status: boolean; message?: string}>{
         const doc = await this.doctorRepository.findDetailsById(id)
         if(doc){
             const mailOptions = {
                 email: doc.email,
                 subject: `Dr. ${doc.doctorName}, application rejection `,
-                code: 'You are Rejected due to insufficeint data',
+                code: `You are Rejected due to ${reason}`,
               };
               await this.SendEmail.sendEmail(mailOptions);
             const d = await this.doctorRepository.findAndDeleteById(id)

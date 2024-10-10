@@ -73,6 +73,16 @@ function TimeSlotForm() {
       return;
     }
 
+    const existingSlots = timeSlots[dateString] || [];
+    const isDuplicate = existingSlots.some(
+      (existingSlot) => existingSlot.start === startTime && existingSlot.end === endTime
+    );
+
+  if (isDuplicate) {
+    toast.error("This time slot already exists for the selected date.");
+    return;
+  }
+
     setTimeSlots((prevTimeSlots) => ({
       ...prevTimeSlots,
       [dateString]: prevTimeSlots[dateString]

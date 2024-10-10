@@ -29,6 +29,8 @@ function ParentManagement() {
       const response = await fetchParents(page, limit);
       if (response.data.success) {
         setParents(response.data.data);
+        setTotalPages(response.data.totalPages);
+        setCurrentPage(response.data.currentPage);
       }
     } catch (err) {
       console.error("An error occurred while fetching data");
@@ -103,9 +105,9 @@ function ParentManagement() {
           <Loading />
         ) : (
           <>
-            <table className="table-auto border-collapse border border-gray-300 w-full hidden md:table">
+            <table className="table-auto border-collapse border border-gray-300 w-full hidden md:table bg-[#DDD0C8]">
               <thead>
-                <tr className="bg-gray-200 border-b border-gray-300">
+                <tr className="bg-white border-b border-gray-300">
                   <th className="border-r border-gray-300 px-4 py-2 text-center">
                     No.
                   </th>
@@ -126,19 +128,19 @@ function ParentManagement() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-300">
+              <tbody className="divide-y divide-gray">
                 {parents.map((parent, index) => (
                   <tr key={parent._id}>
-                    <td className="border-r border-gray-300 px-4 py-2 text-center">
+                    <td className="border-r border-gray px-4 py-2 text-center">
                       {index + 1}
                     </td>
-                    <td className="border-r border-gray-300 px-4 py-2 text-center">
+                    <td className="border-r border-gray px-4 py-2 text-center">
                       {parent.parentName}
                     </td>
-                    <td className="border-r border-gray-300 px-4 py-2 text-center">
+                    <td className="border-r border-gray px-4 py-2 text-center">
                       {parent.email}
                     </td>
-                    <td className="border-r border-gray-300 px-4 py-2 text-center">
+                    <td className="border-r border-gray px-4 py-2 text-center">
                       {parent.children.map((child)=>(
                         <div key={child._id}>
                         <p><strong>Name:</strong> {child.name}</p>
@@ -181,7 +183,7 @@ function ParentManagement() {
               </tbody>
             </table>
 
-            <div className="md:hidden">
+            <div className="md:hidden ">
               {parents.map((parent) => (
                 <div
                   key={parent._id}
@@ -238,17 +240,14 @@ function ParentManagement() {
             )}
           </>
         )}
-      </AdminLayout>
-          
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
               />
+      </AdminLayout>
           
-      <div className="mt-5 md:mt-0">
-        <Footer />
-      </div>
+          
     </div>
   );
 }

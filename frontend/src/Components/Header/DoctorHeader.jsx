@@ -90,7 +90,7 @@ const handleNotificationsClose = () => {
     { text: 'Home', path: '/' },
     { text: 'Planner', path: '/planner' },
     { text: 'Consultations', path: '/consultation' },
-    { text: 'Chat', path: '/chat' },
+    { text: 'Chat', path: '/chatwithparent' },
     { text: 'My Profile', path: '/doctor-profile' },
     { text: 'Logout', path: '#', action: handleLogout },
   ];

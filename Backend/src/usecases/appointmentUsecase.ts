@@ -54,17 +54,21 @@ async updateFailurePayment(id: string): Promise<{status: boolean; message?: stri
     }
 
 /*.........................................get appointments.......................................*/
-async fetchAppointment(id: string): Promise<{status: boolean; message?: string; data?: IAppointment[]}>{
-    const appointments = await this.iappointmentRepository.fetchAppointments(id)
-    if(appointments) return {status:true, message: 'Appointments details fetched successfully', data: appointments}
+async fetchAppointment(id: string, page: number, limit: number): Promise<{status: boolean; message?: string; data?: IAppointment[]; totalPages?: number}>{
+    const appointments = await this.iappointmentRepository.fetchAppointments(id,page,limit)
+    const totalAppointments = await this.iappointmentRepository.countDocuments(id)
+    const totalPages = Math.ceil(totalAppointments / limit);
+    if(appointments) return {status:true, message: 'Appointments details fetched successfully', data: appointments, totalPages: totalPages}
     return {status: false, message: 'Error in fetching appointments details'}
     
     }
 
 /*.........................................fetch doctor's appointments...........................*/
-async fetchDoctorsAppointments(id: string): Promise<{status: boolean; message?: string; data?: IAppointment[]}>{
-    const appointments = await this.iappointmentRepository.fetchDoctorAppointments(id)
-    if(appointments) return {status: true, message: 'Appointments fetched successfully!!', data: appointments}
+async fetchDoctorsAppointments(id: string, page: number, limit: number): Promise<{status: boolean; message?: string; data?: IAppointment[]; totalPages?: number}>{
+    const appointments = await this.iappointmentRepository.fetchDoctorAppointments(id,page,limit)
+    const total = await this.iappointmentRepository.countDoctorDocuments(id)
+    const totalPages = Math.ceil(total / limit);
+    if(appointments) return {status: true, message: 'Appointments fetched successfully!!', data: appointments, totalPages: totalPages}
     return {status: false, message: 'Error in fetching appointments details'}
     }
 

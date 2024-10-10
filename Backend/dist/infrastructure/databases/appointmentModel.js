@@ -22,6 +22,7 @@ const appointmentSchema = new mongoose_1.default.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Child'
     },
+    slotId: { type: String },
     date: { type: String },
     startTime: { type: String },
     endTime: { type: String },

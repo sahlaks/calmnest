@@ -98,6 +98,7 @@ function ConfirmAppointment() {
       doctorName: doctor.doctorName,
       parentName: parentData?.parentName,
       childId: selectedChild?._id || null,
+      slotId: appointment._id,
       date: appointment.date,
       startTime: appointment.startTime,
       endTime: appointment.endTime,

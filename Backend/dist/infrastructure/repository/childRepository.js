@@ -35,7 +35,6 @@ class ChildRepository {
                     const { _id } = child, rest = __rest(child, ["_id"]);
                     return Object.assign(Object.assign({}, rest), { parentId });
                 });
-                console.log('inside childrepo', childrenWithParentId);
                 // Use insertMany to insert all documents at once
                 const savedChildren = yield childModel_1.default.insertMany(childrenWithParentId);
                 const plainChildren = savedChildren.map(child => child.toObject());
@@ -52,7 +51,6 @@ class ChildRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const child = yield childModel_1.default.find({ parentId: parentId }).exec();
-                console.log('rpo', child);
                 return child.length ? child : null;
             }
             catch (error) {
@@ -73,7 +71,6 @@ class ChildRepository {
                     }))
                 };
                 const existingChildren = yield childModel_1.default.find(filter);
-                console.log(existingChildren);
                 if (existingChildren.length > 0) {
                     return existingChildren;
                 }

@@ -72,19 +72,26 @@ class DoctorRepository {
                 .limit(limit);
         });
     }
-    countDocuments(query) {
+    findDoctors(searchQuery, skip, limit, isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield doctorModel_1.default.countDocuments({ doctorName: { $regex: query, $options: 'i' } });
+            return yield doctorModel_1.default.find({ doctorName: { $regex: searchQuery, $options: 'i' }, isVerified: isVerified })
+                .skip(skip)
+                .limit(limit);
         });
     }
-    countAll() {
+    countDocuments(query, isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield doctorModel_1.default.countDocuments();
+            return yield doctorModel_1.default.countDocuments({ doctorName: { $regex: query, $options: 'i' }, isVerified: isVerified });
         });
     }
-    collectDocData(skip, limit) {
+    countAll(isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield doctorModel_1.default.find().skip(skip).limit(limit);
+            return yield doctorModel_1.default.countDocuments({ isVerified: isVerified });
+        });
+    }
+    collectDocData(skip, limit, isVerified) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield doctorModel_1.default.find({ isVerified: isVerified }).skip(skip).limit(limit);
         });
     }
     /*................................................find by Id.................................................*/
@@ -134,13 +141,10 @@ class DoctorRepository {
             const appointmentObjectId = new mongoose_1.default.Types.ObjectId(id);
             try {
                 const res = yield doctorModel_1.default.findByIdAndUpdate(doctorId, { $addToSet: { appointments: appointmentObjectId } }, { new: true });
-                console.log(res);
                 if (res) {
-                    console.log("Doctor updated successfully with appointment ID");
                     return true;
                 }
                 else {
-                    console.log("Doctor not found or update failed");
                     return false;
                 }
             }
@@ -155,7 +159,6 @@ class DoctorRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const notifications = yield notificationModel_1.default.find({ doctorId: id, toParent: false }).sort({ createdAt: -1 });
-                console.log(notifications);
                 return notifications;
             }
             catch (error) {
@@ -168,7 +171,6 @@ class DoctorRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const notifications = yield notificationModel_1.default.findByIdAndUpdate(id, { $set: { isRead: true } });
-                console.log(notifications);
                 return true;
             }
             catch (error) {

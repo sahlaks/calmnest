@@ -16,6 +16,11 @@ const slotSchema: Schema<ISlot> = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    status: {
+        type: String,
+        enum: ['Available', 'Booked'],
+        default: 'Available'
+    },
     doctorId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Doctor'

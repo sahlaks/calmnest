@@ -17,10 +17,6 @@ export class ChildRepository implements IChildRepository{
                     parentId
                 };
                 });
-
-            console.log('inside childrepo', childrenWithParentId);
-            
-
             // Use insertMany to insert all documents at once
             const savedChildren = await childModel.insertMany(childrenWithParentId);
             const plainChildren = savedChildren.map(child => child.toObject());
@@ -35,8 +31,6 @@ export class ChildRepository implements IChildRepository{
     async findChild(parentId: mongoose.Types.ObjectId): Promise<IChild[] | null> {
         try{
             const child = await childModel.find({ parentId: parentId }).exec()
-            console.log('rpo',child);
-            
             return child.length ? child : null;
         }catch(error){
             return null
@@ -56,7 +50,6 @@ export class ChildRepository implements IChildRepository{
             };
 
             const existingChildren = await childModel.find(filter);
-            console.log(existingChildren);
             if (existingChildren.length > 0) {
                 return existingChildren;
             }

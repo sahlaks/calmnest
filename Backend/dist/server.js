@@ -17,12 +17,15 @@ const connectDB_1 = require("./infrastructure/config/connectDB");
 const http_1 = __importDefault(require("http"));
 const dotenv_1 = require("dotenv");
 const createAdmin_1 = require("./infrastructure/services/createAdmin");
+require("./infrastructure/scheduler/slotCleaner");
+const socketServerConnection_1 = require("./infrastructure/services/socketServerConnection");
 (0, dotenv_1.config)();
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield (0, connectDB_1.connectDB)();
         const app = (0, app_1.default)();
         const server = http_1.default.createServer(app);
+        const io = (0, socketServerConnection_1.createSocketChatConnection)(server);
         yield (0, createAdmin_1.createAdmin)();
         const port = process.env.PORT;
         server === null || server === void 0 ? void 0 : server.listen(port, () => {

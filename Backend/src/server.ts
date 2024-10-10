@@ -3,6 +3,10 @@ import { connectDB } from './infrastructure/config/connectDB'
 import http from 'http'
 import { config } from 'dotenv'
 import { createAdmin } from './infrastructure/services/createAdmin'
+
+import './infrastructure/scheduler/slotCleaner'
+import { createSocketChatConnection } from './infrastructure/services/socketServerConnection'
+
 config()
 const startServer = async () => {
     try {
@@ -10,6 +14,8 @@ const startServer = async () => {
       const app = createServer()
       const server = http.createServer(app)
       
+      const io = createSocketChatConnection(server)
+
       await createAdmin()
       const port = process.env.PORT
       server?.listen(port, () => {

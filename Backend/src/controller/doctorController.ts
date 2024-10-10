@@ -23,7 +23,6 @@ export class DoctorController {
       const { doctorName, email, mobileNumber, password } =
         req.body;
         const file = req.file
-        console.log(file);
         
         if (!file) {
           return res.status(400).json({
@@ -31,12 +30,9 @@ export class DoctorController {
             message: "Document is required and must be a PDF",
           });
         }
-        console.log(file.mimetype);
 
         const documentUrl = `uploads/${file.filename}`;
-        console.log(documentUrl);
         
-      
       req.session.doctorData = {
         doctorName,
         email,
@@ -74,7 +70,6 @@ export class DoctorController {
       const { otp } = req.body;
       const sessionOtp = req.session.dotp;
       const doctorData = req.session.doctorData;
-      console.log("session", doctorData);
       console.log(sessionOtp);
 
       if (!doctorData) {
@@ -118,8 +113,6 @@ export class DoctorController {
   ): Promise<Response | void> {
     try {
       const email = req.session.doctorData?.email;
-      console.log(email);
-
       if (!email) {
         console.error(
           "Email is missing in doctorData:",
@@ -351,10 +344,7 @@ export class DoctorController {
 /*.................................refresh accesstoken.........................................*/
 async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Response | void>{
   const refreshToken = req.cookies.doc_refresh_token
-  console.log('inside controllr for accesstoken');
-  
   if(!refreshToken) res.status(401).json({success: false, message: 'Refresh Token Expired' })
-      
   try{
       const decoded = verifyRefreshToken(refreshToken)
       
@@ -374,7 +364,7 @@ async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Res
       return res.status(400).json({ success: false, message: 'Invalid parent data, missing _id' });
       }
 
-      const newAccessToken = jwtCreation(doc._id);
+      const newAccessToken = jwtCreation(doc._id, 'Doctor');
       res.cookie('doc_auth_token',newAccessToken)
       res.status(200).json({ success: true, message: 'Token Updated' });
   }catch(error){
@@ -386,8 +376,7 @@ async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Res
 async updateProfile(req: AuthRequest,res: Response, next: NextFunction): Promise<Response | void>{
   const { name, email, phone, gender, age, degree, fees, street, city, state, country, bio} = req.body;
   const imageBuffer = req.file?.buffer;
-  console.log(imageBuffer);
-  
+
   try{
       let imageUrl: string | undefined;
       if (imageBuffer) {
@@ -442,9 +431,12 @@ async saveSlots(req: AuthRequest, res: Response, next: NextFunction): Promise<Re
 /*....................................fetch slots....................................*/
 async fetchSlots(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
   const doctorId = req.user?.id as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 6;
+
   try{
-    const result = await this.DoctorUseCase.fetchSlotsDetails(doctorId)
-    if(result.status) return res.status(200).json({success: true, message: result.message, slots: result.data})
+    const result = await this.DoctorUseCase.fetchSlotsDetails(doctorId,page,limit)
+    if(result.status) return res.status(200).json({success: true, message: result.message, slots: result.data,totalPages: result.totalPages, currentPage: page})
     return res.status(400).json({success: false, message: result.message})
   }catch(error){
     next(error)
@@ -455,7 +447,7 @@ async fetchSlots(req: AuthRequest, res: Response, next: NextFunction): Promise<R
 async changeAvailability(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
   const doctorId = req.user?.id as string;
   const slotId = req.params.id
-  console.log(slotId);
+  
   try{
     const result = await this.DoctorUseCase.changeAvailabilityWithId(slotId,doctorId)
     if(result.status) return res.status(200).json({success:true, message: result.message, data: result.data})
@@ -493,7 +485,6 @@ async getNotifications(req: AuthRequest, res: Response, next: NextFunction): Pro
 /*................................................read notification....................................*/
 async changeToRead(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
   const { notificationId } = req.body;
-  console.log(notificationId);
   
   try{
     const result = await this.DoctorUseCase.updateNotification(notificationId)

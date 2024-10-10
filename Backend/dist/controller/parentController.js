@@ -57,10 +57,8 @@ class ParentController {
             var _a;
             try {
                 const { otp } = req.body;
-                console.log("controller", otp);
                 const sessionOtp = req.session.otp;
                 const signupData = req.session.signupData;
-                console.log("session", signupData);
                 console.log(sessionOtp);
                 if (!signupData) {
                     return res
@@ -127,7 +125,6 @@ class ParentController {
                     if ((_a = result.data) === null || _a === void 0 ? void 0 : _a.password) {
                         delete result.data.password;
                     }
-                    console.log("after deleting", result.data);
                     res.cookie("access_token", result.accesstoken, { httpOnly: true });
                     res.cookie("refresh_token", result.refreshtoken, { httpOnly: true });
                     return res.status(200).json({ success: true, data: result.data });
@@ -167,7 +164,6 @@ class ParentController {
             try {
                 const user = req.body;
                 const result = yield this.ParentUseCase.findParentByEmail(user);
-                console.log(result);
                 if (result.status) {
                     if (result.message === "User exist") {
                         res.cookie("access_token", result.accesstoken, { httpOnly: true });
@@ -247,7 +243,6 @@ class ParentController {
     resendforForgotPassword(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const email = req.session.pEmail;
-            console.log(req.session);
             if (!email) {
                 return res
                     .status(400)
@@ -304,7 +299,6 @@ class ParentController {
     refreshToken(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const refreshToken = req.cookies.refresh_token;
-            console.log("inside controllr for accesstoken");
             if (!refreshToken)
                 res
                     .status(401)
@@ -329,7 +323,7 @@ class ParentController {
                         message: "Invalid parent data, missing _id",
                     });
                 }
-                const newAccessToken = (0, JwtCreation_1.jwtCreation)(parent._id);
+                const newAccessToken = (0, JwtCreation_1.jwtCreation)(parent._id, 'Parent');
                 res.cookie("access_token", newAccessToken);
                 res.status(200).json({ success: true, message: "Token Updated" });
             }
@@ -396,8 +390,6 @@ class ParentController {
                     state,
                     country,
                 };
-                console.log("inside controller parentdata", parentData);
-                console.log("inside route", kids);
                 let parsedKids = Array.isArray(kids) ? kids : [];
                 if (typeof kids === "string") {
                     try {
@@ -421,8 +413,7 @@ class ParentController {
                 return res.json({ success: false, message: result.message });
             }
             catch (error) {
-                console.error("Error updating profile:", error);
-                return res.status(500).json({ error: "Error saving parent and kids" });
+                next(error);
             }
         });
     }
@@ -458,7 +449,6 @@ class ParentController {
                     return res.status(400).json({ success: false, message: exist.message });
                 else {
                     const result = yield this.ParentUseCase.findParentwithIdandUpdate(userId, details.password);
-                    console.log(result, "controller");
                     if (result.status)
                         return res
                             .status(200)
@@ -530,9 +520,25 @@ class ParentController {
     changeToRead(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { notificationId } = req.body;
-            console.log(notificationId);
             try {
                 const result = yield this.ParentUseCase.updateNotification(notificationId);
+                if (result.status)
+                    return res.status(200).json({ success: true, message: result.message });
+                return res.status(400).json({ success: false, message: result.message });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+    }
+    /*.........................................feedback.................................................*/
+    submitFeedback(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const { feedback } = req.body;
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            try {
+                const result = yield this.ParentUseCase.saveFeedback(userId, feedback);
                 if (result.status)
                     return res.status(200).json({ success: true, message: result.message });
                 return res.status(400).json({ success: false, message: result.message });

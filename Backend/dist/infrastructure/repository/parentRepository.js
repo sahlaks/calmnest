@@ -16,6 +16,7 @@ exports.ParentRepository = void 0;
 const parentModel_1 = __importDefault(require("../databases/parentModel"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const notificationModel_1 = __importDefault(require("../databases/notificationModel"));
+const feedbackModel_1 = __importDefault(require("../databases/feedbackModel"));
 class ParentRepository {
     /*..............................find user through email............................................*/
     findParentByEmail(email) {
@@ -71,7 +72,6 @@ class ParentRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const parent = yield parentModel_1.default.findOneAndUpdate({ email: data.email }, data, { new: true, upsert: true });
-                console.log('parent saved', parent);
                 return parent;
             }
             catch (error) {
@@ -91,7 +91,6 @@ class ParentRepository {
     findParent(page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
             const skip = (page - 1) * limit;
-            const totalParents = yield parentModel_1.default.countDocuments();
             const parents = yield parentModel_1.default.find().skip(skip).limit(limit).populate('children').exec();
             return parents;
         });
@@ -134,13 +133,10 @@ class ParentRepository {
             try {
                 const appointmentObjectId = new mongoose_1.default.Types.ObjectId(appointmentId);
                 const res = yield parentModel_1.default.findByIdAndUpdate(parentId, { $addToSet: { appointments: appointmentObjectId } }, { new: true });
-                console.log(res);
                 if (res) {
-                    console.log("Parent updated successfully with appointment ID");
                     return true;
                 }
                 else {
-                    console.log("Parent not found or update failed");
                     return false;
                 }
             }
@@ -154,7 +150,6 @@ class ParentRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const notifications = yield notificationModel_1.default.find({ parentId: id, toParent: true }).sort({ createdAt: -1 });
-                console.log(notifications);
                 return notifications;
             }
             catch (error) {
@@ -166,9 +161,20 @@ class ParentRepository {
     makeRead(id) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(id);
                 const notifications = yield notificationModel_1.default.findByIdAndUpdate(id, { $set: { isRead: true } });
-                console.log(notifications);
+                return true;
+            }
+            catch (error) {
+                return false;
+            }
+        });
+    }
+    /*........................................feedback............................................*/
+    saveData(feedbackData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const savedOne = new feedbackModel_1.default(feedbackData);
+                yield savedOne.save();
                 return true;
             }
             catch (error) {

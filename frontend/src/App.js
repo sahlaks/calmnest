@@ -35,6 +35,9 @@ import PaymentSuccess from "./Pages/Parent/AppointmentDetails/PaymentSuccess";
 import PaymentFailure from "./Pages/Parent/AppointmentDetails/PaymentFailure";
 import ShowAppointments from "./Pages/Parent/AppointmentDetails/ShowAppointments";
 import Consultation from "./Pages/Doctor/Consultation/Consultation";
+import UnverifiedManagement from "./Pages/Admin/Pages/UnverifiedManagement";
+import ChatPage from "./Pages/Parent/Chat/ChatPage";
+import DoctorChat from "./Pages/Doctor/Chat/DoctorChat";
 
 function App() {
   return (
@@ -152,6 +155,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute allowedRoles={["parent"]}>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
     
 
 
@@ -236,6 +247,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/chatwithparent"
+        element={
+          <ProtectedRoute allowedRoles={["doctor"]}>
+            <DoctorChat />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="/admin" element={<AdminSignin />} />
       <Route
@@ -267,6 +286,16 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <DoctorManagement />
+          </ProtectedRoute>
+        }
+      />
+
+  
+      <Route
+        path="/admin/unverifieddoc"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <UnverifiedManagement />
           </ProtectedRoute>
         }
       />

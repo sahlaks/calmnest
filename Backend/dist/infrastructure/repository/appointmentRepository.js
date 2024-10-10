@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppointmentRepository = void 0;
 const appointmentModel_1 = __importDefault(require("../databases/appointmentModel"));
 const notificationModel_1 = __importDefault(require("../databases/notificationModel"));
+const slotModel_1 = __importDefault(require("../databases/slotModel"));
 class AppointmentRepository {
     /*..........................saving appointment as pending......................................*/
     saveData(appointment) {
@@ -35,6 +36,7 @@ class AppointmentRepository {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = yield appointmentModel_1.default.findByIdAndUpdate(id, { paymentStatus: 'Success' }, { new: true });
+                const slot = yield slotModel_1.default.findByIdAndUpdate(data === null || data === void 0 ? void 0 : data.slotId, { status: 'Booked' });
                 return data;
             }
             catch (error) {
@@ -71,10 +73,11 @@ class AppointmentRepository {
         });
     }
     /*.........................................fetch appointments....................................*/
-    fetchAppointments(id) {
+    fetchAppointments(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const appointments = yield appointmentModel_1.default.find({ parentId: id, paymentStatus: "Success" });
+                const skip = (page - 1) * limit;
+                const appointments = yield appointmentModel_1.default.find({ parentId: id, paymentStatus: "Success" }).skip(skip).limit(limit).sort({ createdAt: -1 });
                 return appointments;
             }
             catch (error) {
@@ -82,16 +85,27 @@ class AppointmentRepository {
             }
         });
     }
+    countDocuments(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return appointmentModel_1.default.countDocuments({ parentId: id, paymentStatus: "Success" });
+        });
+    }
     /*......................................fetch doctor's appointments............................*/
-    fetchDoctorAppointments(id) {
+    fetchDoctorAppointments(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const appointments = yield appointmentModel_1.default.find({ doctorId: id, paymentStatus: "Success" });
+                const skip = (page - 1) * limit;
+                const appointments = yield appointmentModel_1.default.find({ doctorId: id, paymentStatus: "Success" }).skip(skip).limit(limit).sort({ createdAt: -1 });
                 return appointments;
             }
             catch (error) {
                 return null;
             }
+        });
+    }
+    countDoctorDocuments(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return appointmentModel_1.default.countDocuments({ doctorId: id, paymentStatus: "Success" });
         });
     }
     /*..................................change status of appointment.............................*/

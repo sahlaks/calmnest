@@ -10,6 +10,7 @@ interface IAppointment extends Document {
     parentId: mongoose.Schema.Types.ObjectId
     parentName: string
     childId: mongoose.Schema.Types.ObjectId
+    slotId: string
     date: string
     startTime: string
     endTime: string

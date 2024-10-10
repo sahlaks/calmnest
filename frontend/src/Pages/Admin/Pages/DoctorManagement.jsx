@@ -40,7 +40,8 @@ function DoctorManagement() {
   const fetchDoctorData = async (query = "", page = 1, limit = 6) => {
     setLoading(true);
     try {
-      const response = await fetchDoctors(query, page, limit);
+      const isVerified = true
+      const response = await fetchDoctors(query, page, limit, isVerified);
       if (response.data.success) {
         setDoctors(response.data.data);
         setTotalPages(response.data.totalPages);
@@ -79,8 +80,6 @@ function DoctorManagement() {
 
   const filteredDoctors = doctors.filter((doctor) => {
     if (filter === "all") return true;
-    if (filter === "verified") return doctor.isVerified;
-    if (filter === "unverified") return !doctor.isVerified;
     if (filter === "blocked") return doctor.isBlocked;
     if (filter === "active") return !doctor.isBlocked;
     return true;
@@ -158,11 +157,12 @@ function DoctorManagement() {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (reason) => {
     if (!selectedDoctor) return;
 
     try {
-      const res = await rejectDoctor(selectedDoctor._id);
+      console.log("Rejection Reason:", reason)
+      const res = await rejectDoctor(selectedDoctor._id, reason);
       if (res.success) {
         toast.success("Doctor rejected successfully");
         fetchDoctorData();
@@ -217,8 +217,6 @@ function DoctorManagement() {
                 >
                   <option>Filter by</option>
                   <option value="all">All</option>
-                  <option value="verified">Verified</option>
-                  <option value="unverified">Unverified</option>
                   <option value="blocked">Blocked</option>
                   <option value="active">Active</option>
                 </select>
@@ -226,9 +224,9 @@ function DoctorManagement() {
             </div>
 
             <div>
-              <table className="table-auto border-collapse border border-gray-300 w-full hidden md:table">
+              <table className="table-auto border-collapse border border-gray-300 w-full hidden md:table bg-[#DDD0C8]">
                 <thead>
-                  <tr className="bg-gray-200 border-b border-gray-300">
+                  <tr className="bg-gray-200 border-b border-gray-300 bg-white">
                     <th className="border-r border-gray-300 px-4 py-2 text-center">
                       No.
                     </th>
@@ -258,23 +256,23 @@ function DoctorManagement() {
                 <tbody className="divide-y divide-gray-300">
                   {filteredDoctors.map((doctor, index) => (
                     <tr key={doctor._id}>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         {index + 1}
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         <img
                           src={doctor.image}
                           alt={doctor.doctorName}
                           className="w-16 h-16 object-cover rounded-full"
                         />
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         {doctor.doctorName}
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         {doctor.email}
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         <span
                           className={`px-2 py-1 rounded ${
                             doctor.isVerified
@@ -285,7 +283,7 @@ function DoctorManagement() {
                           {doctor.isVerified ? "Verified" : "Unverified"}
                         </span>
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         <span
                           className={`px-2 py-1 rounded ${
                             doctor.isBlocked
@@ -296,7 +294,7 @@ function DoctorManagement() {
                           {doctor.isBlocked ? "Blocked" : "Active"}
                         </span>
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         <button
                           className={`text-${doctor.isBlocked ? "green" : "red"}-600 hover:text-${doctor.isBlocked ? "green" : "red"}-800 ml-4`}
                           onClick={(e) =>
@@ -320,7 +318,7 @@ function DoctorManagement() {
                           <TrashIcon className="h-5 w-5 inline-block" />
                         </button>
                       </td>
-                      <td className="border-r border-gray-300 px-4 py-2 text-center">
+                      <td className="border-r border-gray px-4 py-2 text-center">
                         <button
                           className="text-blue-600 hover:text-red-800 m-4"
                           onClick={() => handleViewProfile(doctor)}
@@ -339,6 +337,7 @@ function DoctorManagement() {
                     key={doctor._id}
                     className="border border-[#FAF5E9]-500 shadow-lg p-4 mb-4"
                   >
+                    
                     <p>
                       <strong>Name:</strong> {doctor.doctorName}
                     </p>
@@ -385,16 +384,14 @@ function DoctorManagement() {
             </div>
           </>
         )}
-      </AdminLayout>
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
         />
+      </AdminLayout>
       
-      <div className="mt-0">
-        <Footer />
-      </div>
+      
 
       {showPopup && (
         <CustomPopup

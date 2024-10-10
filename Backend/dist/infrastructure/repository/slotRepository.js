@@ -35,10 +35,11 @@ class SlotRepository {
         });
     }
     /*...................................fetch slots...........................................*/
-    fetchSlots(id) {
+    fetchSlots(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const slots = yield slotModel_1.default.find({ doctorId: id });
+                const skip = (page - 1) * limit;
+                const slots = yield slotModel_1.default.find({ doctorId: id }).skip(skip).limit(limit).sort({ createdAt: -1 });
                 return slots;
             }
             catch (error) {
@@ -47,11 +48,17 @@ class SlotRepository {
             }
         });
     }
+    countDocuments(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const res = yield slotModel_1.default.countDocuments({ doctorId: id });
+            return res;
+        });
+    }
     /*..........................................available slots for doctor..............................*/
     fetchAvailableSlots(id) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const slots = yield slotModel_1.default.find({ doctorId: id, isAvailable: true });
+                const slots = yield slotModel_1.default.find({ doctorId: id, isAvailable: true, status: 'Available' });
                 return slots;
             }
             catch (error) {
@@ -88,6 +95,21 @@ class SlotRepository {
             }
             catch (error) {
                 return null;
+            }
+        });
+    }
+    /*.................................deleting slots.................................*/
+    deleteSlotsBefore(date) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield slotModel_1.default.deleteMany({
+                    date: { $lt: date },
+                });
+                return result.deletedCount || 0;
+            }
+            catch (error) {
+                console.error('Error deleting slots:', error);
+                throw new Error('Could not delete slots');
             }
         });
     }

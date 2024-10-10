@@ -16,11 +16,8 @@ export const handleLogoutDoctor = async() => {
 
 export async function generateDoctorAccessToken(){
     try{
-      console.log('generateaccess token');
-      
       const response = await axiosInstanceDoctor.post('/api/doctor/refreshToken',{},{withCredentials: true})
       console.log(response)
-      
     }catch(error){
   
     }
@@ -28,10 +25,7 @@ export async function generateDoctorAccessToken(){
 
   export const saveTimeSlots = async (slotsArray) => {
     try {
-        console.log('api',slotsArray);
-        
       const response = await axiosInstanceDoctor.post(`/api/doctor/slots`, {slots: slotsArray}, { withCredentials: true });
-
       return response.data;
     } catch (error) {
       console.error('Error saving time slots:', error);
@@ -39,9 +33,12 @@ export async function generateDoctorAccessToken(){
     }
   };
 
-  export const fetchSlotsFromDB = async () => {
+  export const fetchSlotsFromDB = async (page, limit) => {
     try {
-    const res = await axiosInstanceDoctor.get('/api/doctor/fetchslots', { withCredentials: true });
+    const res = await axiosInstanceDoctor.get('/api/doctor/fetchslots', {params: { page: page, 
+      limit: limit  } , withCredentials: true });
+      console.log(res.data);
+      
     return res.data
   } catch (error) {
     console.error('Error saving time slots:', error);
@@ -59,8 +56,9 @@ export const deleteSlot = async (slotId) => {
   return res;
 }
 
-export const getAppointments = async () => {
-  const res = await axiosInstanceDoctor.get('/api/doctor/getappointments',{withCredentials: true})
+export const getAppointments = async (page, limit) => {
+  const res = await axiosInstanceDoctor.get('/api/doctor/getappointments',{params: { page: page, 
+    limit: limit  } , withCredentials: true })
   return res.data;
 }
 
@@ -84,4 +82,40 @@ export const changeToRead = async (notificationId) => {
   console.log(notificationId);
   const res = await axiosInstanceDoctor.post('/api/doctor/mark-notification-read', { notificationId }, {withCredentials: true});
   console.log(res);
+}
+
+/*..............................search chat.....................................*/
+export const fetchParentList = async (query) => {
+  console.log(query)
+  try {
+    const response = await axiosInstanceDoctor.get(`/api/doctor/parents?search=${query}`,{withCredentials:true});
+    return response.data
+  } catch (error) {
+    console.error("Error fetching doctor data:", error);
+  }
+}
+
+/*................................fetch messages..............................*/
+export const fetchMessages = async (pid) => {
+  try {
+    const response = await axiosInstanceDoctor.get(`/api/doctor/fetchmessages?id=${pid}`,{withCredentials: true})
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+  }
+}
+
+/*...................................save message to backend..................................*/
+export const saveMessage = async (message) => {
+  try{
+    await axiosInstanceDoctor.post(`/api/doctor/savemessage`,{message},{withCredentials: true})   
+  }catch(err){
+    console.error("Error saving messages:", err);
+  }
+}
+
+/*..............................chat lists..................................*/
+export const fetchDoctorChats = async () => {
+  const res = await axiosInstanceDoctor.get(`/api/doctor/chatlists`,{withCredentials: true})   
+  return res.data
 }

@@ -8,6 +8,7 @@ import doctorRouter from '../routes/doctorRoutes';
 import adminRouter from '../routes/adminRoutes';
 import doctorModel from '../databases/doctorModel';
 import path from 'path';
+import feedbackModel from '../databases/feedbackModel';
 
 
 
@@ -36,7 +37,7 @@ const createServer = () => {
     
     app.use(express.json())
     app.use(express.urlencoded({ extended: true }))
-    app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+    app.use('/uploads', express.static(path.resolve(__dirname, '../../../uploads')));
 
     app.use('/api/parents',parentRouter)
     app.use('/api/doctor', doctorRouter)
@@ -81,10 +82,22 @@ const createServer = () => {
       }
     });
     
+    app.get('/api/testimonials', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const testimonials = await feedbackModel.find().populate('parentId', 'parentName').exec();
+        const shuffledTestimonials = testimonials.sort(() => 0.5 - Math.random());
+        const randomTestimonials = shuffledTestimonials.slice(0, 3);
+        res.status(200).json({
+          success: true,
+          data: randomTestimonials,
+        });
+      } catch (error) {
+       next(error)
+      }
+    })
 
     app.get('/',(req: Request,res: Response)=>{
       console.log('welcome to homepage')
-      res.send('Welcome to the homepage');
     })
 
     //error middleware

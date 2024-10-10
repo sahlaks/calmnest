@@ -1,8 +1,24 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { TextField } from '@mui/material';
 import './Testimonials.css'
+import { fetchTestimonials } from '../../Services/API/CommonAPI';
+
 
 function Testimonials() {
+    const [testimonial, setTestimonials] = useState([]);
+    
+    useEffect(() => {
+      const getTestimonials = async () => {
+        try {
+          const res = await fetchTestimonials();
+          if(res.success)
+            setTestimonials(res.data)
+        } catch (error) {
+          console.error('Failed to load testimonials:', error);
+        }
+      };
+      getTestimonials();
+    }, []); 
 
     const testimonials = [
         {
@@ -28,10 +44,10 @@ function Testimonials() {
     <>
         <div className='flex flex-col bg-[#DDD0C8]'>
             <div className='flex flex-wrap justify-evenly gap-5 p-5'>
-            {testimonials.slice(0, 3).map((testimonial, index) => (
-            <div key={index} className='max-w-xs rounded-lg shadow-lg overflow-hidden p-4 bg-[#FAF5E9]'>
+            {testimonial.map((feedback) => (
+            <div key={feedback._id} className='max-w-xs rounded-lg shadow-lg overflow-hidden p-4 bg-[#FAF5E9]'>
                 <TextField
-                value={testimonial.review}
+                value={feedback.message}
                 size='small'
                 fullWidth
                 multiline
@@ -41,7 +57,7 @@ function Testimonials() {
                     style: { fontStyle: 'italic' }
                 }}
                 />
-                <h4 className='text-2xl mt-2 text-center'>{testimonial.parent}</h4>
+                <h4 className='text-2xl mt-2 text-center'>- {feedback.parentId?.parentName}</h4>
             </div>
             ))}
             </div>

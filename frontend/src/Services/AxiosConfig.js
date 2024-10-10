@@ -4,6 +4,7 @@ import store from '../Redux/Store';
 import { parentLogout } from '../Redux/Slice/authSlice';
 import {generateAccessToken, handleLogout} from '../utils/parentFunctions'
 import { generateDoctorAccessToken, handleLogoutDoctor } from './API/DoctorAPI';
+import { longFormatters } from 'date-fns';
 
 /*.............................................parent.............................................*/
 const axiosInstance = axios.create({
@@ -15,7 +16,6 @@ const axiosInstance = axios.create({
 
 
 axiosInstance.interceptors.response.use((response) => {
-    console.log('Response Interceptor:', response);
     return response;
 },        
     async (error) => {
@@ -23,6 +23,8 @@ axiosInstance.interceptors.response.use((response) => {
         const originalRequest = error.config;
         if(error.response){
             const status = error.response.status;
+            console.log(status);
+            
             if (status === 401) {
                 if (error.response.data.message === 'Refresh Token Expired') {
                     toast.error('Please login to access this page')
@@ -38,6 +40,8 @@ axiosInstance.interceptors.response.use((response) => {
                     }
                 } 
             } else if (status === 403) {
+                console.log('403');
+                
                 toast.error('Access denied. Please log in.');
                 await handleLogout()
             } else if (status === 500) {
@@ -60,7 +64,6 @@ const axiosInstanceDoctor = axios.create({
 })
 
 axiosInstanceDoctor.interceptors.response.use((response) => {
-    console.log('Response Interceptor:', response);
     return response;
 },        
     async (error) => {

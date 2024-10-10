@@ -3,8 +3,10 @@ import INotification from "../../domain/entity/notification";
 import { IAppointmentRepository } from "../../usecases/interface/IAppointmentRepositiry";
 import appointmentModel from "../databases/appointmentModel";
 import notificationModel from "../databases/notificationModel";
+import slotModel from "../databases/slotModel";
 
 export class AppointmentRepository implements IAppointmentRepository{
+    
     /*..........................saving appointment as pending......................................*/
     async saveData(appointment: any): Promise<IAppointment | null> {
         try {
@@ -21,6 +23,7 @@ export class AppointmentRepository implements IAppointmentRepository{
     async updateData(id: string): Promise<IAppointment | null> {
         try{
             const data = await appointmentModel.findByIdAndUpdate(id,{paymentStatus: 'Success'},{new: true})
+            const slot = await slotModel.findByIdAndUpdate(data?.slotId,{status: 'Booked'})
             return data;
         } catch (error) {
           console.error('Error updating appointment:', error);
@@ -52,23 +55,33 @@ export class AppointmentRepository implements IAppointmentRepository{
     }
 
     /*.........................................fetch appointments....................................*/
-    async fetchAppointments(id: string): Promise<IAppointment[] | null> {
+    async fetchAppointments(id: string, page: number, limit: number): Promise<IAppointment[] | null> {
         try{
-            const appointments = await appointmentModel.find({parentId:id,paymentStatus: "Success"})
+            const skip = (page - 1) * limit;
+            const appointments = await appointmentModel.find({parentId:id,paymentStatus: "Success"}).skip(skip).limit(limit).sort({createdAt:-1})
             return appointments
         } catch(error){
             return null
         }
     }
 
+    async countDocuments(id: string): Promise<number> {
+        return appointmentModel.countDocuments({parentId: id, paymentStatus: "Success"})
+      }
+      
     /*......................................fetch doctor's appointments............................*/
-    async fetchDoctorAppointments(id: string): Promise<IAppointment[] | null> {
+    async fetchDoctorAppointments(id: string, page: number, limit: number): Promise<IAppointment[] | null> {
         try{
-            const appointments = await appointmentModel.find({doctorId:id,paymentStatus: "Success"})
+            const skip = (page - 1) * limit;
+            const appointments = await appointmentModel.find({doctorId:id,paymentStatus: "Success"}).skip(skip).limit(limit).sort({createdAt: -1})
             return appointments
         } catch(error){
             return null
         }
+    }
+
+    async countDoctorDocuments(id: string): Promise<number> {
+        return appointmentModel.countDocuments({doctorId: id, paymentStatus: "Success"})
     }
 
     /*..................................change status of appointment.............................*/

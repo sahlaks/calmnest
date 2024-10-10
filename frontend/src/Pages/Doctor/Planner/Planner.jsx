@@ -7,6 +7,7 @@ import Footer from "../../../Components/Footer/Footer";
 import { toast } from "react-toastify";
 import CustomPopup from "../../../Components/CustomPopUp/CustomPopup";
 import DoctorHeader from "../../../Components/Header/DoctorHeader";
+import Pagination from "../../../Components/Pagination/Pagination";
 
 
 function Planner() {
@@ -14,21 +15,30 @@ function Planner() {
   const [slots, setSlots] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [actionType, setActionType] = useState(""); // "delete" or "availability"
+  const [actionType, setActionType] = useState(""); 
   const navigate = useNavigate();
 
-  const fetchSlots = async () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+
+  const fetchSlots = async (page = 1, limit = 6) => {
     setLoading(true);
     try {
-      const response = await fetchSlotsFromDB();
-      console.log(response);
+      const response = await fetchSlotsFromDB(page, limit);
       setSlots(response.slots);
+      setTotalPages(response.totalPages);
+      setCurrentPage(response.currentPage);
     } catch (error) {
       toast.error("Error fetching slots");
       console.error("Error fetching slots:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page) => {
+    fetchSlots(page);
   };
 
   useEffect(() => {
@@ -248,6 +258,11 @@ function Planner() {
           )}
         </>
       )}
+      <Pagination
+         currentPage={currentPage}
+         totalPages={totalPages}
+         onPageChange={handlePageChange}
+      />
       <Footer />
     </>
   );

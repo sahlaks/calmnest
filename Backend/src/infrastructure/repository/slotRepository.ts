@@ -23,9 +23,10 @@ export class SlotRepository implements ISlotRepository{
     }
 
     /*...................................fetch slots...........................................*/
-    async fetchSlots(id: string): Promise<ISlot[] | null> {
+    async fetchSlots(id: string, page: number, limit: number): Promise<ISlot[] | null> {
         try{
-            const slots = await slotModel.find({doctorId:id});
+            const skip = (page - 1) * limit;
+            const slots = await slotModel.find({doctorId:id}).skip(skip).limit(limit).sort({createdAt: -1});
             return slots
         }catch(error){
             console.error("Error fetching slot:", error);
@@ -33,10 +34,16 @@ export class SlotRepository implements ISlotRepository{
         }
     }
 
+    async countDocuments(id: string): Promise<number> {
+        const res = await slotModel.countDocuments({doctorId: id})
+        return res
+        
+    }
+
     /*..........................................available slots for doctor..............................*/
     async fetchAvailableSlots(id: string): Promise<ISlot[] | null> {
         try{
-            const slots = await slotModel.find({doctorId: id, isAvailable: true})
+            const slots = await slotModel.find({doctorId: id, isAvailable: true, status: 'Available'})
             return slots
         }catch(error){
             console.error("Error fetching slot:", error);
@@ -70,4 +77,19 @@ export class SlotRepository implements ISlotRepository{
             return null
         }
     }
+
+    /*.................................deleting slots.................................*/
+        async deleteSlotsBefore(date: Date): Promise<number> {
+            try {
+                const result = await slotModel.deleteMany({
+                    date: { $lt: date },
+                });
+                return result.deletedCount || 0;
+            } catch (error) {
+                console.error('Error deleting slots:', error);
+                throw new Error('Could not delete slots')
+            }
+        }
+
+
 } 

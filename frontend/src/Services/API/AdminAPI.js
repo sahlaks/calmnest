@@ -3,7 +3,6 @@ import { axiosInstanceAdmin, axiosInstanceDoctor } from "../AxiosConfig"
 export const fetchParents = async (page, limit) => {
     const res = await axiosInstanceAdmin.get('/api/admin/fetch-parents',{params: { page: page, 
       limit: limit  }, withCredentials: true})
-    console.log(res);
     return res
     
 }
@@ -22,8 +21,6 @@ export const blockParent = async (parentId) => {
 export const deleteParent = async (parentId) => {
     try{
         const res = axiosInstanceAdmin.delete(`/api/admin/delete-parent/${parentId}`,{},{withCredentials: true});
-        console.log(res);
-        
         return res;
     }catch(err){
         console.error('Error blocking/unblocking parent:', err);
@@ -31,10 +28,11 @@ export const deleteParent = async (parentId) => {
     }
 }
 
-export const fetchDoctors = async (query, page, limit) => {
+export const fetchDoctors = async (query, page, limit, isVerified) => {
     const res = await axiosInstanceAdmin.get('/api/admin/fetch-doctors', {params: { search: query,  page: page, 
-      limit: limit  }, withCredentials: true})
-    console.log(res);
+      limit: limit, isVerified: isVerified  }, withCredentials: true})
+      console.log(res);
+      
     return res
 }
 
@@ -68,10 +66,14 @@ export const deleteDoctor = async (id) => {
       }
 }
 
-export const rejectDoctor = async (id) => {
+export const rejectDoctor = async (id, reason) => {
+  console.log(reason);
+  
   try {
-    const response = await axiosInstanceAdmin.post(`/api/admin/doctor/${id}/reject`,{},{withCredentials: true});
-    return response.data;
+   const response = await axiosInstanceAdmin.post(`/api/admin/doctor/${id}/reject`,{reason},{withCredentials: true});
+   console.log(response);
+   
+  return response.data;
   } catch (error) {
     console.error('Error deleting doctor:', error);
     throw error;

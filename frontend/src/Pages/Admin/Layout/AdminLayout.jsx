@@ -2,6 +2,7 @@
 import React from "react";
 import AdminSidebar from '../Sidebar/AdminSidebar';  
 import AdminHeader from "../../../Components/Header/AdminHeader";
+import Footer from "../../../Components/Footer/Footer";
 
 const AdminLayout = ({ children }) => {
   return (
@@ -17,6 +18,7 @@ const AdminLayout = ({ children }) => {
         </main>
       </div>
     </div>
+    <Footer/>
     </div>
 
   );

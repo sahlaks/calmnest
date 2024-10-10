@@ -61,8 +61,8 @@ class DoctorUseCase {
                 data.password = yield bcrypt_1.default.hash(data.password, salt);
                 const savedUser = yield this.idoctorRepository.saveUserDetails(data);
                 if (savedUser) {
-                    const token = (0, JwtCreation_1.jwtCreation)(savedUser._id);
-                    const refreshtoken = (0, JwtCreation_1.refreshToken)(savedUser._id);
+                    const token = (0, JwtCreation_1.jwtCreation)(savedUser._id, 'Doctor');
+                    const refreshtoken = (0, JwtCreation_1.refreshToken)(savedUser._id, 'Doctor');
                     return {
                         status: true,
                         message: "Doctor registered successfully",
@@ -84,6 +84,7 @@ class DoctorUseCase {
             }
         });
     }
+    /*...............................................otp.....................................................*/
     sendOtp(email) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -126,9 +127,8 @@ class DoctorUseCase {
                     // Check password
                     const isMatch = yield bcrypt_1.default.compare(password, existingUser.password);
                     if (isMatch) {
-                        const token = (0, JwtCreation_1.jwtCreation)(existingUser._id);
-                        const refreshtoken = (0, JwtCreation_1.refreshToken)(existingUser._id);
-                        console.log(refreshtoken);
+                        const token = (0, JwtCreation_1.jwtCreation)(existingUser._id, 'Doctor');
+                        const refreshtoken = (0, JwtCreation_1.refreshToken)(existingUser._id, 'Doctor');
                         return {
                             status: true,
                             message: "Valid credentials",
@@ -159,7 +159,6 @@ class DoctorUseCase {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const user = yield this.idoctorRepository.findDoctorByEmail(email);
-                console.log(user);
                 if (user) {
                     const otp = (0, otpGenerator_1.generateOTP)();
                     const mailOptions = {
@@ -333,12 +332,14 @@ class DoctorUseCase {
         });
     }
     /*............................................fetch slot..........................................*/
-    fetchSlotsDetails(id) {
+    fetchSlotsDetails(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const res = yield this.islotRepository.fetchSlots(id);
+                const res = yield this.islotRepository.fetchSlots(id, page, limit);
+                const total = yield this.islotRepository.countDocuments(id);
+                const totalPages = Math.ceil(total / limit);
                 if (res)
-                    return { status: true, message: 'Slots fetched successfully', data: res };
+                    return { status: true, message: 'Slots fetched successfully', data: res, totalPages: totalPages };
                 return { status: false, message: 'Error fetching slots' };
             }
             catch (error) {
@@ -392,9 +393,7 @@ class DoctorUseCase {
     updateNotification(id) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('usecase', id);
                 const res = yield this.idoctorRepository.makeRead(id);
-                console.log(res);
                 if (res)
                     return { status: true, message: 'Read the Notification' };
                 return { status: false, message: 'Failed to make READ' };

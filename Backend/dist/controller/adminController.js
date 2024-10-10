@@ -39,7 +39,7 @@ class AdminController {
                 const limit = parseInt(req.query.limit) || 6;
                 const parents = yield this.AdminUsecase.collectParentData(page, limit);
                 if (parents)
-                    return res.status(200).json({ success: true, message: parents.message, data: parents.data, totalPages: parents.totalPages });
+                    return res.status(200).json({ success: true, message: parents.message, data: parents.data, totalPages: parents.totalPages, currentPage: page });
                 else
                     return res.status(400).json({ success: false, message: 'No data available' });
             }
@@ -86,14 +86,15 @@ class AdminController {
                 const searchQuery = req.query.search || '';
                 const page = parseInt(req.query.page) || 1;
                 const limit = parseInt(req.query.limit) || 6;
+                const isVerified = req.query.isVerified;
                 let doctors, totalDoctors;
                 if (searchQuery) {
-                    doctors = yield this.AdminUsecase.collectDoctorData(searchQuery, page, limit);
-                    totalDoctors = yield this.AdminUsecase.countSearchResults(searchQuery);
+                    doctors = yield this.AdminUsecase.collectDoctorData(searchQuery, page, limit, isVerified);
+                    totalDoctors = yield this.AdminUsecase.countSearchResults(searchQuery, isVerified);
                 }
                 else {
-                    doctors = yield this.AdminUsecase.collectDocData(page, limit);
-                    totalDoctors = yield this.AdminUsecase.countAllDoctors();
+                    doctors = yield this.AdminUsecase.collectDocData(page, limit, isVerified);
+                    totalDoctors = yield this.AdminUsecase.countAllDoctors(isVerified);
                 }
                 if (doctors)
                     return res.status(200).json({ success: true, data: doctors.data, totalPages: Math.ceil(totalDoctors / limit),
@@ -159,7 +160,8 @@ class AdminController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { id } = req.params;
-                const result = yield this.AdminUsecase.rejectWithId(id);
+                const { reason } = req.body;
+                const result = yield this.AdminUsecase.rejectWithId(id, reason);
                 if (result.status)
                     return res.status(201).json({ success: true, message: result.message });
                 else

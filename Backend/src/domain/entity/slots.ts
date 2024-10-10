@@ -6,6 +6,7 @@ interface ISlot extends Document{
     startTime: string
     endTime: string
     isAvailable: boolean
+    status: string
     doctorId: mongoose.Schema.Types.ObjectId
 }
 

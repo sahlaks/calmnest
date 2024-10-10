@@ -3,27 +3,39 @@ import Loading from "../../../Components/Loading/Loading";
 import { getAppointments } from "../../../utils/parentFunctions";
 import ParentHeader from "../../../Components/Header/ParentHeader";
 import Footer from "../../../Components/Footer/Footer";
+import Pagination from "../../../Components/Pagination/Pagination";
+import FeedbackButton from "../../../Components/Feedback/FeedbackButton";
+
 
 function ShowAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+
+  const fetchAppointments = async (page = 1, limit = 6) => {
+    try {
+      const response = await getAppointments(page, limit);
+      if (response.success) {
+        setAppointments(response.data);
+        setTotalPages(response.totalPages);
+        setCurrentPage(response.currentPage);
+      } else {
+        console.error("Failed to fetch appointments");
+      }
+    } catch (error) {
+      console.error("Error fetching appointments: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    fetchAppointments(page);
+  };
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const response = await getAppointments();
-        if (response.success) {
-          setAppointments(response.data);
-        } else {
-          console.error("Failed to fetch appointments");
-        }
-      } catch (error) {
-        console.error("Error fetching appointments: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAppointments();
   }, []);
 
@@ -167,6 +179,12 @@ function ShowAppointments() {
             </div>
           </>
         )}
+        <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+        <FeedbackButton/>
         <Footer />
       </div>
     </>

@@ -21,6 +21,7 @@ const doctorRoutes_1 = __importDefault(require("../routes/doctorRoutes"));
 const adminRoutes_1 = __importDefault(require("../routes/adminRoutes"));
 const doctorModel_1 = __importDefault(require("../databases/doctorModel"));
 const path_1 = __importDefault(require("path"));
+const feedbackModel_1 = __importDefault(require("../databases/feedbackModel"));
 const createServer = () => {
     try {
         const app = (0, express_1.default)();
@@ -41,7 +42,7 @@ const createServer = () => {
         }));
         app.use(express_1.default.json());
         app.use(express_1.default.urlencoded({ extended: true }));
-        app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
+        app.use('/uploads', express_1.default.static(path_1.default.resolve(__dirname, '../../../uploads')));
         app.use('/api/parents', parentRoutes_1.default);
         app.use('/api/doctor', doctorRoutes_1.default);
         app.use('/api/admin', adminRoutes_1.default);
@@ -81,9 +82,22 @@ const createServer = () => {
                 next(error);
             }
         }));
+        app.get('/api/testimonials', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const testimonials = yield feedbackModel_1.default.find().populate('parentId', 'parentName').exec();
+                const shuffledTestimonials = testimonials.sort(() => 0.5 - Math.random());
+                const randomTestimonials = shuffledTestimonials.slice(0, 3);
+                res.status(200).json({
+                    success: true,
+                    data: randomTestimonials,
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        }));
         app.get('/', (req, res) => {
             console.log('welcome to homepage');
-            res.send('Welcome to the homepage');
         });
         //error middleware
         app.use((err, req, res, next) => {

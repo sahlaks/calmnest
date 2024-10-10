@@ -66,10 +66,9 @@ class ParentUseCase {
                 data.password = yield bcrypt_1.default.hash(data.password, salt);
                 data.isLoggin = true;
                 const savedUser = yield this.iparentRepository.saveUserDetails(data);
-                console.log(savedUser);
                 if (savedUser) {
-                    const accesstoken = (0, JwtCreation_1.jwtCreation)(savedUser._id);
-                    const refreshtoken = (0, JwtCreation_1.refreshToken)(savedUser._id);
+                    const accesstoken = (0, JwtCreation_1.jwtCreation)(savedUser._id, 'Parent');
+                    const refreshtoken = (0, JwtCreation_1.refreshToken)(savedUser._id, 'Parent');
                     return {
                         status: true,
                         message: "User registered successfully",
@@ -97,7 +96,6 @@ class ParentUseCase {
             try {
                 //check user
                 const existingUser = yield this.iparentRepository.findParentByEmail(email);
-                console.log(existingUser);
                 if (existingUser) {
                     //check blocked or not
                     if (existingUser.isBlocked) {
@@ -106,8 +104,8 @@ class ParentUseCase {
                     // Check password
                     const isMatch = yield bcrypt_1.default.compare(password, existingUser.password);
                     if (isMatch) {
-                        const accesstoken = (0, JwtCreation_1.jwtCreation)(existingUser._id);
-                        const refreshtoken = (0, JwtCreation_1.refreshToken)(existingUser._id);
+                        const accesstoken = (0, JwtCreation_1.jwtCreation)(existingUser._id, 'Parent');
+                        const refreshtoken = (0, JwtCreation_1.refreshToken)(existingUser._id, 'Parent');
                         return {
                             status: true,
                             message: "Valid credentials",
@@ -224,8 +222,8 @@ class ParentUseCase {
             try {
                 const parent = yield this.iparentRepository.findParentByEmail(user.email);
                 if (parent) {
-                    const accesstoken = (0, JwtCreation_1.jwtCreation)(parent._id);
-                    const refreshtoken = (0, JwtCreation_1.refreshToken)(parent._id);
+                    const accesstoken = (0, JwtCreation_1.jwtCreation)(parent._id, 'Parent');
+                    const refreshtoken = (0, JwtCreation_1.refreshToken)(parent._id, 'Parent');
                     return {
                         status: true,
                         message: "User exist",
@@ -241,8 +239,8 @@ class ParentUseCase {
                     const isGoogleSignUp = true;
                     const parent = yield this.iparentRepository.saveUser(user, password, isGoogleSignUp);
                     if (parent) {
-                        const accesstoken = (0, JwtCreation_1.jwtCreation)(parent._id);
-                        const refreshtoken = (0, JwtCreation_1.refreshToken)(parent._id);
+                        const accesstoken = (0, JwtCreation_1.jwtCreation)(parent._id, 'Parent');
+                        const refreshtoken = (0, JwtCreation_1.refreshToken)(parent._id, 'Parent');
                         return {
                             status: true,
                             message: "User authenticated and added",
@@ -291,7 +289,6 @@ class ParentUseCase {
             const parentId = new mongoose_1.default.Types.ObjectId(id);
             try {
                 const data = yield this.ichildRepository.findChild(parentId);
-                console.log('child', data);
                 if (data) {
                     return { status: true, message: 'Data exist', child: data };
                 }
@@ -308,7 +305,6 @@ class ParentUseCase {
             try {
                 // Save the parent first
                 const savedParent = yield this.iparentRepository.saveParent(parentData);
-                console.log('usecase', savedParent);
                 if (!savedParent) {
                     return { status: false, message: 'Failed to save parent' };
                 }
@@ -318,7 +314,6 @@ class ParentUseCase {
                 const parentId = new mongoose_1.default.Types.ObjectId(savedParent._id);
                 // Validate existing children
                 const existingChildren = yield this.ichildRepository.validateChild(childrenData, parentId);
-                console.log('existing children', existingChildren);
                 const existingChildrenArray = existingChildren !== null && existingChildren !== void 0 ? existingChildren : [];
                 // Filter out children that already exist in the database
                 const newChildren = childrenData.filter(child => !existingChildrenArray.some(existing => existing.name === child.name &&
@@ -330,7 +325,6 @@ class ParentUseCase {
                 }
                 // Save only new children
                 const savedChildren = yield this.ichildRepository.saveChild(newChildren, parentId);
-                console.log('Saved child data', savedChildren);
                 if (!savedChildren) {
                     return { status: false, message: 'Failed to save children' };
                 }
@@ -372,7 +366,6 @@ class ParentUseCase {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const existingUser = yield this.iparentRepository.findDetailsById(id);
-                console.log('use', existingUser);
                 if (existingUser) {
                     // Check password
                     const isMatch = yield bcrypt_1.default.compare(password, existingUser.password);
@@ -444,15 +437,33 @@ class ParentUseCase {
     updateNotification(id) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('usecase', id);
                 const res = yield this.iparentRepository.makeRead(id);
-                console.log(res);
                 if (res)
                     return { status: true, message: 'Read the Notification' };
                 return { status: false, message: 'Failed to make READ' };
             }
             catch (error) {
                 return { status: false, message: "An error occured during fetching" };
+            }
+        });
+    }
+    /*.............................................feedback...............................................*/
+    saveFeedback(id, feedback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const feedbackData = {
+                    parentId: new mongoose_1.default.Types.ObjectId(id),
+                    message: feedback,
+                    createdAt: new Date()
+                };
+                const res = yield this.iparentRepository.saveData(feedbackData);
+                if (res)
+                    return { status: true, message: 'Feedback Submitted Successfully!' };
+                return { status: false, message: 'Failed to save feedback!!' };
+            }
+            catch (error) {
+                console.error('Error saving feedback:', error);
+                return { status: false };
             }
         });
     }

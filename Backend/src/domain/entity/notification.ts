@@ -1,4 +1,3 @@
-import { booleanType } from "aws-sdk/clients/iam"
 import { Schema } from "mongoose"
 
 interface INotification extends Document {

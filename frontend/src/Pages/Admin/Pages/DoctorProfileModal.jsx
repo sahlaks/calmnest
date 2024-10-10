@@ -1,23 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import RejectionModal from "./RejectionModal";
 
 const DoctorProfileModal = ({ doctor, onClose, onVerify, onReject }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [isRejectModalOpen, setRejectModalOpen] = useState(false);
 
-    const handleVerify = () => {
-        onVerify(); 
-        navigate("/admin/doctors");
-      };
-    
-      const handleReject = () => {
-        onReject();
-        navigate("/admin/doctors");
-      };
+  const handleVerify = () => {
+    onVerify();
+    navigate("/admin/doctors");
+  };
 
-      
+  const handleReject = (reason) => {
+    onReject(reason);
+    navigate("/admin/doctors");
+  };
+
   if (!doctor) return null;
   const documentUrl = doctor.document
-    ? `http://localhost:3000/${doctor.document}`
+    ? `http://localhost:5000/${doctor.document}`
     : null;
   console.log(doctor.document);
 
@@ -34,9 +35,7 @@ const DoctorProfileModal = ({ doctor, onClose, onVerify, onReject }) => {
         <p>
           <strong>Phone:</strong> {doctor.mobileNumber}
         </p>
-        <p>
-          <strong>Documents:</strong>
-        </p>
+
         <div className="mb-4">
           {documentUrl ? (
             <>
@@ -45,11 +44,12 @@ const DoctorProfileModal = ({ doctor, onClose, onVerify, onReject }) => {
               </p>
               <a
                 href={documentUrl}
+                download
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 underline"
               >
-                View Document
+                Download Document
               </a>
             </>
           ) : (
@@ -59,7 +59,7 @@ const DoctorProfileModal = ({ doctor, onClose, onVerify, onReject }) => {
         <div className="flex justify-end space-x-4 mt-4">
           <button
             className="bg-red-500 text-white px-4 py-2 rounded"
-            onClick={handleReject}
+            onClick={() => setRejectModalOpen(true)}
           >
             Reject
           </button>
@@ -78,6 +78,13 @@ const DoctorProfileModal = ({ doctor, onClose, onVerify, onReject }) => {
           </button>
         </div>
       </div>
+
+      {isRejectModalOpen && (
+        <RejectionModal
+          onClose={() => setRejectModalOpen(false)}
+          onReject={handleReject}
+        />
+      )}
     </div>
   );
 };

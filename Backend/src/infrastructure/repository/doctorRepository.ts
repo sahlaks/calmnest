@@ -55,16 +55,23 @@ export class DoctorRepository implements IDoctorRepository{
         .limit(limit);
     }
 
-    async countDocuments(query: string): Promise<number> {
-        return await doctorModel.countDocuments({ doctorName: { $regex: query, $options: 'i' } });
+    async findDoctors(searchQuery: string, skip: number, limit: number, isVerified: boolean): Promise<IDoctor[] | null> {
+        return await doctorModel.find({ doctorName: { $regex: searchQuery, $options: 'i' }, isVerified: isVerified})
+        .skip(skip)
+        .limit(limit);
     }
 
-    async countAll(): Promise<number>{
-        return await doctorModel.countDocuments();
+    async countDocuments(query: string, isVerified: boolean): Promise<number> {
+        return await doctorModel.countDocuments({ doctorName: { $regex: query, $options: 'i' }, isVerified: isVerified });
     }
 
-    async collectDocData(skip: number, limit: number): Promise<IDoctor[]> {
-        return await doctorModel.find().skip(skip).limit(limit)
+    async countAll(isVerified: boolean): Promise<number> {
+        return await doctorModel.countDocuments({ isVerified: isVerified });
+    }
+    
+
+    async collectDocData(skip: number, limit: number, isVerified: boolean): Promise<IDoctor[]> {
+        return await doctorModel.find({isVerified: isVerified}).skip(skip).limit(limit)
     }
 
     /*................................................find by Id.................................................*/
@@ -115,12 +122,9 @@ export class DoctorRepository implements IDoctorRepository{
         { $addToSet: { appointments: appointmentObjectId } },
         { new: true }
       )
-      console.log(res);
       if (res) {
-        console.log("Doctor updated successfully with appointment ID");
         return true;
       } else {
-        console.log("Doctor not found or update failed");
         return false;
       }
     } catch (error) {
@@ -133,7 +137,6 @@ export class DoctorRepository implements IDoctorRepository{
 async getNotifications(id: string): Promise<INotification[] | null> {
     try{
       const notifications = await notificationModel.find({doctorId: id, toParent: false}).sort({createdAt: -1})
-      console.log(notifications);
       return notifications
     } catch (error) {
       return null;
@@ -144,7 +147,6 @@ async getNotifications(id: string): Promise<INotification[] | null> {
     async makeRead(id: string): Promise<boolean> {
       try{
         const notifications = await notificationModel.findByIdAndUpdate(id,{$set: {isRead: true}})
-        console.log(notifications);
         return true
         } catch (error) {
         return false;

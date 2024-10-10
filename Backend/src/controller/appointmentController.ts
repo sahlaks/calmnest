@@ -10,7 +10,7 @@ export class AppointmentController {
     /*.............................................calling stripe.........................................*/
     async callingStripe(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> {
         const parentId = req.user?.id as string
-        const { amount, name, age, gender, doctorId, doctorName, parentName, childId, date, startTime, endTime, fees } = req.body;
+        const { amount, name, age, gender, doctorId, doctorName, parentName, childId, date, startTime, endTime, fees, slotId } = req.body;
         const appointmentDetails = {
             name,
             age,
@@ -20,11 +20,13 @@ export class AppointmentController {
             parentId,
             parentName,
             childId,
+            slotId,
             date,
             startTime,
             endTime,
             fees
           };
+         
         try {
             const result = await this.AppointmentUsecase.savePendingAppointment(appointmentDetails)
             if (!result.status) return res.status(400).json({ error: result.message });
@@ -74,9 +76,12 @@ export class AppointmentController {
     /*......................................get appointments...................................*/
     async getAppointments(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> {
         const parentId = req.user?.id as string
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 6;
+      
         try{
-            const result = await this.AppointmentUsecase.fetchAppointment(parentId)
-            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+            const result = await this.AppointmentUsecase.fetchAppointment(parentId,page,limit)
+            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data, totalPages: result.totalPages, currentPage: page})
             return res.status(400).json({success: false})
         } catch(error){
             next(error)}
@@ -85,9 +90,12 @@ export class AppointmentController {
     /*......................................get doctor appointments...........................................*/
     async getDoctorAppointments(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
         const doctorId = req.user?.id as string
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 6;
+
         try{
-            const result = await this.AppointmentUsecase.fetchDoctorsAppointments(doctorId)
-            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data})
+            const result = await this.AppointmentUsecase.fetchDoctorsAppointments(doctorId,page,limit)
+            if(result.status) return res.status(200).json({success: true, message: result.message, data: result.data, totalPages: result.totalPages, currentPage: page})
             return res.status(400).json({success: false})
         } catch(error){
             next(error)} 

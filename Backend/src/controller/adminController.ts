@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AdminUseCase } from "../usecases/adminUsecases";
+import { bool } from "aws-sdk/clients/signer";
 
 export class AdminController{
     constructor( private AdminUsecase: AdminUseCase) {}
@@ -28,7 +29,7 @@ export class AdminController{
           const limit = parseInt(req.query.limit as string) || 6;
       
             const parents = await this.AdminUsecase.collectParentData(page,limit);
-            if(parents) return res.status(200).json({success: true, message: parents.message, data: parents.data,  totalPages: parents.totalPages});
+            if(parents) return res.status(200).json({success: true, message: parents.message, data: parents.data,  totalPages: parents.totalPages, currentPage: page});
             else return res.status(400).json({success: false, message: 'No data available'})
           } catch (error) {
             next(error);
@@ -65,13 +66,14 @@ export class AdminController{
           const searchQuery = req.query.search as string || '';
           const page = parseInt(req.query.page as string) || 1; 
           const limit = parseInt(req.query.limit as string) || 6;
+          const isVerified = req.query.isVerified as any
           let doctors, totalDoctors
           if (searchQuery) {
-            doctors = await this.AdminUsecase.collectDoctorData(searchQuery, page, limit);
-            totalDoctors = await this.AdminUsecase.countSearchResults(searchQuery);
+            doctors = await this.AdminUsecase.collectDoctorData(searchQuery, page, limit, isVerified);
+            totalDoctors = await this.AdminUsecase.countSearchResults(searchQuery, isVerified);
           } else {
-            doctors = await this.AdminUsecase.collectDocData(page, limit);
-            totalDoctors = await this.AdminUsecase.countAllDoctors();
+            doctors = await this.AdminUsecase.collectDocData(page, limit, isVerified);
+            totalDoctors = await this.AdminUsecase.countAllDoctors(isVerified);
           }
         if(doctors) return res.status(200).json({success: true, data: doctors.data,  totalPages: Math.ceil(totalDoctors / limit),
           currentPage: page,});
@@ -122,7 +124,8 @@ export class AdminController{
     async rejectDoctor(req: Request, res: Response, next: NextFunction): Promise<Response | void>{
     try{
       const {id} = req.params
-      const result = await this.AdminUsecase.rejectWithId(id)
+      const { reason } = req.body 
+      const result = await this.AdminUsecase.rejectWithId(id,reason)
       if(result.status) return res.status(201).json({ success: true, message: result.message});
       else return res.status(400).json({ success: false, message: result.message });
     } catch (error) {

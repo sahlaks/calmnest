@@ -13,9 +13,10 @@ export interface IDoctorRepository{
     findAndVerify(id: string): Promise<IDoctor | null>
     findAndDeleteById(id: string): Promise<IDoctor | null>
     saveDoctor(data: IDoctor): Promise<IDoctor | null>
-    countDocuments(query: string): Promise<number>
-    countAll(): Promise<number>
-    collectDocData(skip: number, limit: number): Promise<IDoctor[]>
+    findDoctors(query: string, skip: number, limit: number, isVerified: boolean): Promise<IDoctor[] | null>
+    countDocuments(query: string, isVerified: boolean): Promise<number>
+    countAll(isVerified: boolean): Promise<number>
+    collectDocData(skip: number, limit: number, isVerified: boolean): Promise<IDoctor[]>
     updateDoctorwithApointment(id: string, doctorId: string): Promise<boolean>
     getNotifications(id: string): Promise<INotification[] | null>
     makeRead(id: string): Promise<boolean>

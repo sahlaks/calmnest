@@ -23,16 +23,13 @@ class DoctorController {
             try {
                 const { doctorName, email, mobileNumber, password } = req.body;
                 const file = req.file;
-                console.log(file);
                 if (!file) {
                     return res.status(400).json({
                         success: false,
                         message: "Document is required and must be a PDF",
                     });
                 }
-                console.log(file.mimetype);
                 const documentUrl = `uploads/${file.filename}`;
-                console.log(documentUrl);
                 req.session.doctorData = {
                     doctorName,
                     email,
@@ -68,7 +65,6 @@ class DoctorController {
                 const { otp } = req.body;
                 const sessionOtp = req.session.dotp;
                 const doctorData = req.session.doctorData;
-                console.log("session", doctorData);
                 console.log(sessionOtp);
                 if (!doctorData) {
                     return res
@@ -109,7 +105,6 @@ class DoctorController {
             var _a;
             try {
                 const email = (_a = req.session.doctorData) === null || _a === void 0 ? void 0 : _a.email;
-                console.log(email);
                 if (!email) {
                     console.error("Email is missing in doctorData:", req.session.doctorData);
                     return res.status(400).json({
@@ -336,7 +331,6 @@ class DoctorController {
     refreshToken(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const refreshToken = req.cookies.doc_refresh_token;
-            console.log('inside controllr for accesstoken');
             if (!refreshToken)
                 res.status(401).json({ success: false, message: 'Refresh Token Expired' });
             try {
@@ -352,7 +346,7 @@ class DoctorController {
                 if (!doc._id) {
                     return res.status(400).json({ success: false, message: 'Invalid parent data, missing _id' });
                 }
-                const newAccessToken = (0, JwtCreation_1.jwtCreation)(doc._id);
+                const newAccessToken = (0, JwtCreation_1.jwtCreation)(doc._id, 'Doctor');
                 res.cookie('doc_auth_token', newAccessToken);
                 res.status(200).json({ success: true, message: 'Token Updated' });
             }
@@ -367,7 +361,6 @@ class DoctorController {
             var _a;
             const { name, email, phone, gender, age, degree, fees, street, city, state, country, bio } = req.body;
             const imageBuffer = (_a = req.file) === null || _a === void 0 ? void 0 : _a.buffer;
-            console.log(imageBuffer);
             try {
                 let imageUrl;
                 if (imageBuffer) {
@@ -424,10 +417,12 @@ class DoctorController {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const doctorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 6;
             try {
-                const result = yield this.DoctorUseCase.fetchSlotsDetails(doctorId);
+                const result = yield this.DoctorUseCase.fetchSlotsDetails(doctorId, page, limit);
                 if (result.status)
-                    return res.status(200).json({ success: true, message: result.message, slots: result.data });
+                    return res.status(200).json({ success: true, message: result.message, slots: result.data, totalPages: result.totalPages, currentPage: page });
                 return res.status(400).json({ success: false, message: result.message });
             }
             catch (error) {
@@ -441,7 +436,6 @@ class DoctorController {
             var _a;
             const doctorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             const slotId = req.params.id;
-            console.log(slotId);
             try {
                 const result = yield this.DoctorUseCase.changeAvailabilityWithId(slotId, doctorId);
                 if (result.status)
@@ -489,7 +483,6 @@ class DoctorController {
     changeToRead(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { notificationId } = req.body;
-            console.log(notificationId);
             try {
                 const result = yield this.DoctorUseCase.updateNotification(notificationId);
                 if (result.status)

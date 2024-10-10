@@ -24,6 +24,7 @@ import {
 import ImageCropperModal from "../../../Services/imageCroper";
 import ChangePassword from "../Changepassword/ChangePassword";
 import { removeKidWithId } from "../../../utils/parentFunctions";
+import FeedbackButton from "../../../Components/Feedback/FeedbackButton";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -291,6 +292,7 @@ const Profile = () => {
   }, [image]);
 
   return (
+    <>
     <div className="min-h-screen p-6 flex flex-col items-center justify-center">
       <HeaderSwitcher/>
       {loading ? (
@@ -688,6 +690,8 @@ const Profile = () => {
         <Footer />
       </div>
     </div>
+      <FeedbackButton/>
+    </>
   );
 };
 

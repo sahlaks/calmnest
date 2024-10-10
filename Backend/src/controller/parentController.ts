@@ -6,7 +6,6 @@ import { verifyRefreshToken } from "../infrastructure/services/tokenVerification
 import { jwtCreation } from "../infrastructure/services/JwtCreation";
 import { uploadImage } from "../infrastructure/services/cloudinaryService";
 import mongoose from "mongoose";
-import { Auth } from "aws-sdk/clients/docdbelastic";
 
 export class ParentController {
   constructor(private ParentUseCase: ParentUseCase) {}
@@ -51,11 +50,8 @@ export class ParentController {
   ): Promise<Response | void> {
     try {
       const { otp } = req.body;
-      console.log("controller", otp);
-
       const sessionOtp = req.session.otp;
       const signupData = req.session.signupData;
-      console.log("session", signupData);
       console.log(sessionOtp);
 
       if (!signupData) {
@@ -125,8 +121,6 @@ export class ParentController {
         if (result.data?.password) {
           delete (result.data as { password?: string }).password;
         }
-        console.log("after deleting", result.data);
-
         res.cookie("access_token", result.accesstoken, { httpOnly: true });
         res.cookie("refresh_token", result.refreshtoken, { httpOnly: true });
         return res.status(200).json({ success: true, data: result.data });
@@ -168,8 +162,6 @@ export class ParentController {
     try {
       const user = req.body;
       const result = await this.ParentUseCase.findParentByEmail(user);
-      console.log(result);
-
       if (result.status) {
         if (result.message === "User exist") {
           res.cookie("access_token", result.accesstoken, { httpOnly: true });
@@ -252,7 +244,6 @@ export class ParentController {
     next: NextFunction
   ): Promise<Response | void> {
     const email = req.session.pEmail as string;
-    console.log(req.session);
     if (!email) {
       return res
         .status(400)
@@ -311,8 +302,6 @@ export class ParentController {
     next: NextFunction
   ): Promise<Response | void> {
     const refreshToken = req.cookies.refresh_token;
-    console.log("inside controllr for accesstoken");
-
     if (!refreshToken)
       res
         .status(401)
@@ -344,7 +333,7 @@ export class ParentController {
         });
       }
 
-      const newAccessToken = jwtCreation(parent._id);
+      const newAccessToken = jwtCreation(parent._id, 'Parent');
       res.cookie("access_token", newAccessToken);
       res.status(200).json({ success: true, message: "Token Updated" });
     } catch (error) {
@@ -429,9 +418,6 @@ export class ParentController {
         state,
         country,
       };
-      console.log("inside controller parentdata", parentData);
-      console.log("inside route", kids);
-
       let parsedKids = Array.isArray(kids) ? kids : [];
 
       if (typeof kids === "string") {
@@ -458,8 +444,7 @@ export class ParentController {
         });
       return res.json({ success: false, message: result.message });
     } catch (error) {
-      console.error("Error updating profile:", error);
-      return res.status(500).json({ error: "Error saving parent and kids" });
+      next(error)
     }
   }
 
@@ -505,7 +490,6 @@ export class ParentController {
           userId,
           details.password
         );
-        console.log(result, "controller");
 
         if (result.status)
           return res
@@ -570,11 +554,22 @@ export class ParentController {
     /*................................................read notification....................................*/
     async changeToRead(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
       const { notificationId } = req.body;
-      console.log(notificationId);
-      
       try{
         const result = await this.ParentUseCase.updateNotification(notificationId)
         if(result.status) return res.status(200).json({success: true, message: result.message})
+        return res.status(400).json({success: false, message: result.message})
+      } catch(error) {
+        next(error)
+      }
+    }
+
+    /*.........................................feedback.................................................*/
+    async submitFeedback(req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>{
+      const {feedback} = req.body
+      const userId = req.user?.id as string
+      try{
+        const result = await this.ParentUseCase.saveFeedback(userId,feedback)
+        if(result.status) return res.status(200).json({success:true, message: result.message})
         return res.status(400).json({success: false, message: result.message})
       } catch(error) {
         next(error)

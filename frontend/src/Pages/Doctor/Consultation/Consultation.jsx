@@ -5,6 +5,7 @@ import Loading from "../../../Components/Loading/Loading";
 import { toast } from "react-toastify";
 import { changeStatus, getAppointments } from "../../../Services/API/DoctorAPI";
 import CustomPopup from "../../../Components/CustomPopUp/CustomPopup";
+import Pagination from "../../../Components/Pagination/Pagination";
 
 function Consultation() {
   const [appointments, setAppointments] = useState([]);
@@ -13,22 +14,32 @@ function Consultation() {
   const [appointmentList, setAppointmentList] = useState([]);
   const [showCancelPopup, setShowCancelPopup] = useState(false);
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const res = await getAppointments();
-        if (res.success) {
-          setAppointments(res.data);
-          setAppointmentList(res.data);
-          toast.success(res.message, { className: "custom-toast" });
-        }
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        toast.error("Error fetching appointments");
-      } finally {
-        setLoading(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchAppointments = async (page = 1, limit = 6) => {
+    try {
+      const res = await getAppointments(page,limit);
+      if (res.success) {
+        setAppointments(res.data);
+        setAppointmentList(res.data);
+        setTotalPages(res.totalPages);
+        setCurrentPage(res.currentPage);
+        toast.success(res.message, { className: "custom-toast" });
       }
-    };
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      toast.error("Error fetching appointments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    fetchAppointments(page);
+  };
+
+  useEffect(() => {
     fetchAppointments();
   }, []);
 
@@ -288,6 +299,11 @@ function Consultation() {
         )}
       </div>
 
+      <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
       <Footer />
 
       {/* Custom Popup for confirming cancellation */}

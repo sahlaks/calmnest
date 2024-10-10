@@ -1,5 +1,7 @@
 import { Request } from 'express';
 
 export interface AuthRequest extends Request {
-  user?: {id: string}
+  user?: {
+    id: string;
+    role: string}
 }

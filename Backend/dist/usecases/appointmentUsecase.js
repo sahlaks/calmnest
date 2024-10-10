@@ -59,20 +59,24 @@ class AppointmentUseCase {
         });
     }
     /*.........................................get appointments.......................................*/
-    fetchAppointment(id) {
+    fetchAppointment(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const appointments = yield this.iappointmentRepository.fetchAppointments(id);
+            const appointments = yield this.iappointmentRepository.fetchAppointments(id, page, limit);
+            const totalAppointments = yield this.iappointmentRepository.countDocuments(id);
+            const totalPages = Math.ceil(totalAppointments / limit);
             if (appointments)
-                return { status: true, message: 'Appointments details fetched successfully', data: appointments };
+                return { status: true, message: 'Appointments details fetched successfully', data: appointments, totalPages: totalPages };
             return { status: false, message: 'Error in fetching appointments details' };
         });
     }
     /*.........................................fetch doctor's appointments...........................*/
-    fetchDoctorsAppointments(id) {
+    fetchDoctorsAppointments(id, page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            const appointments = yield this.iappointmentRepository.fetchDoctorAppointments(id);
+            const appointments = yield this.iappointmentRepository.fetchDoctorAppointments(id, page, limit);
+            const total = yield this.iappointmentRepository.countDoctorDocuments(id);
+            const totalPages = Math.ceil(total / limit);
             if (appointments)
-                return { status: true, message: 'Appointments fetched successfully!!', data: appointments };
+                return { status: true, message: 'Appointments fetched successfully!!', data: appointments, totalPages: totalPages };
             return { status: false, message: 'Error in fetching appointments details' };
         });
     }

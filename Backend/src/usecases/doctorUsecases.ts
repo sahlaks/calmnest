@@ -77,8 +77,8 @@ export class DoctorUseCase {
       const savedUser = await this.idoctorRepository.saveUserDetails(data);
 
       if (savedUser) {
-        const token = jwtCreation(savedUser._id);
-        const refreshtoken = refreshToken(savedUser._id);
+        const token = jwtCreation(savedUser._id,'Doctor');
+        const refreshtoken = refreshToken(savedUser._id, 'Doctor');
 
         return {
           status: true,
@@ -98,7 +98,8 @@ export class DoctorUseCase {
       };
     }
   }
-
+  
+/*...............................................otp.....................................................*/
   async sendOtp(
     email: string
   ): Promise<{ status: boolean; message?: string; otp?: string }> {
@@ -153,10 +154,9 @@ export class DoctorUseCase {
         // Check password
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (isMatch) {
-          const token = jwtCreation(existingUser._id);
-          const refreshtoken = refreshToken(existingUser._id);
-          console.log(refreshtoken);
-
+          const token = jwtCreation(existingUser._id, 'Doctor');
+          const refreshtoken = refreshToken(existingUser._id, 'Doctor');
+        
           return {
             status: true,
             message: "Valid credentials",
@@ -185,7 +185,6 @@ export class DoctorUseCase {
   ): Promise<{ status: boolean; message?: string; otp?: string }> {
     try {
       const user = await this.idoctorRepository.findDoctorByEmail(email);
-      console.log(user);
 
       if (user) {
         const otp = generateOTP();
@@ -360,10 +359,12 @@ export class DoctorUseCase {
   }
   
   /*............................................fetch slot..........................................*/
-  async fetchSlotsDetails(id: string): Promise<{status: boolean; message?: string; data?: ISlot[]}>{
+  async fetchSlotsDetails(id: string, page: number, limit: number): Promise<{status: boolean; message?: string; data?: ISlot[], totalPages?: number}>{
     try{
-      const res = await this.islotRepository.fetchSlots(id)
-      if(res) return {status: true, message: 'Slots fetched successfully', data: res}
+      const res = await this.islotRepository.fetchSlots(id,page,limit)
+      const total = await this.islotRepository.countDocuments(id)
+      const totalPages = Math.ceil(total / limit);
+      if(res) return {status: true, message: 'Slots fetched successfully', data: res, totalPages: totalPages}
       return {status: false, message: 'Error fetching slots'}
     }catch(error){
       return { status: false, message: "Failed to fetch slots" };
@@ -407,10 +408,7 @@ async fetchingNotifications(id: string): Promise<{status: boolean; message?: str
 /*........................................make read.............................................*/
 async updateNotification(id: string): Promise<{status: boolean; message?: string}>{
   try{
-    console.log('usecase',id);
-    
     const res = await this.idoctorRepository.makeRead(id)
-    console.log(res);
     
     if(res) return{status:true, message: 'Read the Notification'}
     return {status:false, message: 'Failed to make READ'}

@@ -31,7 +31,7 @@ class AdminUseCase {
                 if (!isMatch) {
                     return { status: false, message: 'Invalid credentials' };
                 }
-                const accessToken = (0, JwtCreation_1.jwtCreation)(exist._id);
+                const accessToken = (0, JwtCreation_1.jwtCreation)(exist._id, 'Admin');
                 return { status: true, message: 'Admin logged successfully', data: exist, token: accessToken };
             }
             else {
@@ -75,30 +75,30 @@ class AdminUseCase {
         });
     }
     /*.............................................collect doctor data...........................................*/
-    collectDoctorData(query, page, limit) {
+    collectDoctorData(query, page, limit, isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
             const skip = (page - 1) * limit;
-            const doctor = yield this.doctorRepository.findDoctor(query, skip, limit);
+            const doctor = yield this.doctorRepository.findDoctors(query, skip, limit, isVerified);
             if (doctor) {
                 return { status: true, message: 'Fetch Doctor Data Successfully', data: doctor };
             }
             return { status: false, message: 'No data available' };
         });
     }
-    countSearchResults(query) {
+    countSearchResults(query, isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.doctorRepository.countDocuments(query);
+            return yield this.doctorRepository.countDocuments(query, isVerified);
         });
     }
-    countAllDoctors() {
+    countAllDoctors(isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.doctorRepository.countAll();
+            return yield this.doctorRepository.countAll(isVerified);
         });
     }
-    collectDocData(page, limit) {
+    collectDocData(page, limit, isVerified) {
         return __awaiter(this, void 0, void 0, function* () {
             const skip = (page - 1) * limit;
-            const doctors = yield this.doctorRepository.collectDocData(skip, limit);
+            const doctors = yield this.doctorRepository.collectDocData(skip, limit, isVerified);
             return { data: doctors };
         });
     }
@@ -147,14 +147,14 @@ class AdminUseCase {
         });
     }
     /*.............................find and rejct..................................................... */
-    rejectWithId(id) {
+    rejectWithId(id, reason) {
         return __awaiter(this, void 0, void 0, function* () {
             const doc = yield this.doctorRepository.findDetailsById(id);
             if (doc) {
                 const mailOptions = {
                     email: doc.email,
                     subject: `Dr. ${doc.doctorName}, application rejection `,
-                    code: 'You are Rejected due to insufficeint data',
+                    code: `You are Rejected due to ${reason}`,
                 };
                 yield this.SendEmail.sendEmail(mailOptions);
                 const d = yield this.doctorRepository.findAndDeleteById(id);

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import IChild from "../../domain/entity/Child";
 import IParent from "../../domain/entity/Parents";
 import INotification from "../../domain/entity/notification";
+import IFeedback from "../../domain/entity/feedback";
 
 export interface IParentRepository {
     findParentByEmail(email: string): Promise<IParent | null>;
@@ -20,4 +21,5 @@ export interface IParentRepository {
     updateParentwithPayment(appointmentId: string, parentId: string): Promise<boolean>
     getNotifications(id: string): Promise<INotification[] | null>
     makeRead(id: string): Promise<boolean>
+    saveData(feedbackData: Partial<IFeedback>): Promise<boolean>
 }

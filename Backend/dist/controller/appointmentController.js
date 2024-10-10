@@ -20,7 +20,7 @@ class AppointmentController {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             const parentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-            const { amount, name, age, gender, doctorId, doctorName, parentName, childId, date, startTime, endTime, fees } = req.body;
+            const { amount, name, age, gender, doctorId, doctorName, parentName, childId, date, startTime, endTime, fees, slotId } = req.body;
             const appointmentDetails = {
                 name,
                 age,
@@ -30,6 +30,7 @@ class AppointmentController {
                 parentId,
                 parentName,
                 childId,
+                slotId,
                 date,
                 startTime,
                 endTime,
@@ -98,10 +99,12 @@ class AppointmentController {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const parentId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 6;
             try {
-                const result = yield this.AppointmentUsecase.fetchAppointment(parentId);
+                const result = yield this.AppointmentUsecase.fetchAppointment(parentId, page, limit);
                 if (result.status)
-                    return res.status(200).json({ success: true, message: result.message, data: result.data });
+                    return res.status(200).json({ success: true, message: result.message, data: result.data, totalPages: result.totalPages, currentPage: page });
                 return res.status(400).json({ success: false });
             }
             catch (error) {
@@ -114,10 +117,12 @@ class AppointmentController {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const doctorId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 6;
             try {
-                const result = yield this.AppointmentUsecase.fetchDoctorsAppointments(doctorId);
+                const result = yield this.AppointmentUsecase.fetchDoctorsAppointments(doctorId, page, limit);
                 if (result.status)
-                    return res.status(200).json({ success: true, message: result.message, data: result.data });
+                    return res.status(200).json({ success: true, message: result.message, data: result.data, totalPages: result.totalPages, currentPage: page });
                 return res.status(400).json({ success: false });
             }
             catch (error) {

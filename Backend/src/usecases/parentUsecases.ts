@@ -18,6 +18,7 @@ import IDoctor from "../domain/entity/doctor";
 import ISlot from "../domain/entity/slots";
 import { ISlotRepository } from "./interface/ISlotRepository";
 import INotification from "../domain/entity/notification";
+import IFeedback from "../domain/entity/feedback";
 
 export class ParentUseCase {
   private iparentRepository: IParentRepository;
@@ -85,11 +86,9 @@ export class ParentUseCase {
       data.isLoggin = true;
 
       const savedUser = await this.iparentRepository.saveUserDetails(data);
-      console.log(savedUser);
-
       if (savedUser) {
-        const accesstoken = jwtCreation(savedUser._id);
-        const refreshtoken = refreshToken(savedUser._id);
+        const accesstoken = jwtCreation(savedUser._id, 'Parent');
+        const refreshtoken = refreshToken(savedUser._id, 'Parent');
 
         return {
           status: true,
@@ -127,7 +126,6 @@ export class ParentUseCase {
       const existingUser = await this.iparentRepository.findParentByEmail(
         email
       );
-      console.log(existingUser);
 
       if (existingUser) {
         //check blocked or not
@@ -137,8 +135,8 @@ export class ParentUseCase {
         // Check password
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (isMatch) {
-          const accesstoken = jwtCreation(existingUser._id);
-          const refreshtoken = refreshToken(existingUser._id);
+          const accesstoken = jwtCreation(existingUser._id, 'Parent');
+          const refreshtoken = refreshToken(existingUser._id, 'Parent');
           return {
             status: true,
             message: "Valid credentials",
@@ -263,8 +261,8 @@ export class ParentUseCase {
     try {
       const parent = await this.iparentRepository.findParentByEmail(user.email);
       if (parent) {
-        const accesstoken = jwtCreation(parent._id);
-        const refreshtoken = refreshToken(parent._id);
+        const accesstoken = jwtCreation(parent._id, 'Parent');
+        const refreshtoken = refreshToken(parent._id, 'Parent');
         return {
           status: true,
           message: "User exist",
@@ -284,8 +282,8 @@ export class ParentUseCase {
         );
 
         if (parent) {
-          const accesstoken = jwtCreation(parent._id);
-          const refreshtoken = refreshToken(parent._id);
+          const accesstoken = jwtCreation(parent._id, 'Parent');
+          const refreshtoken = refreshToken(parent._id, 'Parent');
 
           return {
             status: true,
@@ -332,8 +330,6 @@ export class ParentUseCase {
     const parentId = new mongoose.Types.ObjectId(id)
     try{
       const data = await this.ichildRepository.findChild(parentId)
-      console.log('child',data);
-      
       if(data){
         return {status: true, message: 'Data exist', child: data}
       }
@@ -351,8 +347,6 @@ export class ParentUseCase {
     try {
         // Save the parent first
         const savedParent = await this.iparentRepository.saveParent(parentData);
-        console.log('usecase', savedParent);
-
         if (!savedParent) {
             return { status: false, message: 'Failed to save parent' };
         }
@@ -365,8 +359,6 @@ export class ParentUseCase {
 
         // Validate existing children
         const existingChildren = await this.ichildRepository.validateChild(childrenData, parentId);
-        console.log('existing children', existingChildren);
-
         const existingChildrenArray = existingChildren ?? [];
         // Filter out children that already exist in the database
         const newChildren = childrenData.filter(child =>
@@ -384,8 +376,6 @@ export class ParentUseCase {
 
         // Save only new children
         const savedChildren = await this.ichildRepository.saveChild(newChildren, parentId);
-        console.log('Saved child data', savedChildren);
-
         if (!savedChildren) {
             return { status: false, message: 'Failed to save children' };
         }
@@ -427,8 +417,7 @@ export class ParentUseCase {
    async verifyPassword(id: string, password: string): Promise<{status: boolean; message?: string}>{
     try{
     const existingUser = await this.iparentRepository.findDetailsById(id);
-    console.log('use',existingUser);
-    
+  
     if(existingUser){
        // Check password
        const isMatch = await bcrypt.compare(password, existingUser.password);
@@ -491,15 +480,28 @@ async fetchingNotifications(id: string): Promise<{status: boolean; message?: str
 /*........................................make read.............................................*/
 async updateNotification(id: string): Promise<{status: boolean; message?: string}>{
   try{
-    console.log('usecase',id);
-    
     const res = await this.iparentRepository.makeRead(id)
-    console.log(res);
-    
     if(res) return{status:true, message: 'Read the Notification'}
     return {status:false, message: 'Failed to make READ'}
   } catch (error) {
     return { status: false, message: "An error occured during fetching"}
+  }
+}
+
+/*.............................................feedback...............................................*/
+async saveFeedback(id: string, feedback: string): Promise<{status: boolean; message?: string}>{
+  try{
+    const feedbackData = {
+      parentId: new mongoose.Types.ObjectId(id),
+      message: feedback,
+      createdAt: new Date()
+    };
+  const res = await this.iparentRepository.saveData(feedbackData);
+  if (res) return { status: true, message: 'Feedback Submitted Successfully!' };
+  return {status: false, message: 'Failed to save feedback!!'}
+  } catch (error) {
+    console.error('Error saving feedback:', error);
+    return { status: false };
   }
 }
 

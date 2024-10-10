@@ -12,6 +12,10 @@ import Stripe from "stripe";
 import { AppointmentController } from "../../controller/appointmentController";
 import { AppointmentUseCase } from "../../usecases/appointmentUsecase";
 import { AppointmentRepository } from "../repository/appointmentRepository";
+import checkBlockedStatus from "../middleware/checkBlockedStatus";
+import { ChatUseCase } from "../../usecases/chatUsecases";
+import { ChatRepository } from "../repository/chatRepository";
+import { ChatController } from "../../controller/chatController";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const parentRouter = express.Router();
@@ -29,9 +33,18 @@ const parentUseCase = new ParentUseCase(
 );
 const controller = new ParentController(parentUseCase);
 //appointment
-const appointmentRepository = new AppointmentRepository()
-const appointmentUsecase = new AppointmentUseCase(appointmentRepository,parentRepository,doctorRepository)
+const appointmentRepository = new AppointmentRepository();
+const appointmentUsecase = new AppointmentUseCase(
+  appointmentRepository,
+  parentRepository,
+  doctorRepository
+);
 const appointmentController = new AppointmentController(appointmentUsecase);
+
+//chat
+const chatRepository = new ChatRepository();
+const chatUsecase = new ChatUseCase(chatRepository);
+const chatController = new ChatController(chatUsecase);
 
 //signup
 parentRouter.post("/signup", (req, res, next) => {
@@ -86,7 +99,8 @@ parentRouter.post("/new-password", (req, res, next) => {
 //fetch data for profile
 parentRouter.get(
   "/parentprofile",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   (req, res, next) => {
     controller.fetchData(req, res, next);
   }
@@ -100,7 +114,8 @@ parentRouter.post("/refreshToken", (req, res, next) => {
 //update profile
 parentRouter.post(
   "/updateParentProfile",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   upload,
   (req, res, next) => {
     controller.updateProfile(req, res, next);
@@ -110,9 +125,9 @@ parentRouter.post(
 //remove kid
 parentRouter.delete(
   "/remove-kid/:id",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   (req, res, next) => {
-    console.log(req.params.id);
     controller.deleteChildData(req, res, next);
   }
 );
@@ -120,7 +135,8 @@ parentRouter.delete(
 //change password
 parentRouter.post(
   "/change-password",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   (req, res, next) => {
     controller.changePassword(req, res, next);
   }
@@ -129,9 +145,9 @@ parentRouter.post(
 //fetch doctors
 parentRouter.get(
   "/details/:id/doctor",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   (req, res, next) => {
-    console.log("route fetch");
     controller.fetchDoctorDetails(req, res, next);
   }
 );
@@ -139,40 +155,116 @@ parentRouter.get(
 //child details
 parentRouter.get(
   "/child-details",
-  validateTokens(parentRepository),
+  validateTokens("Parent"),
+  checkBlockedStatus,
   (req, res, next) => {
     controller.fetchChildData(req, res, next);
   }
 );
 
 //stripe
-parentRouter.post("/create-checkout-session",  validateTokens(parentRepository), (req, res, next) => {
-  appointmentController.callingStripe(req, res, next);
-});
+parentRouter.post(
+  "/create-checkout-session",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    appointmentController.callingStripe(req, res, next);
+  }
+);
 
 //for success payment
-parentRouter.post("/success/:session_id", validateTokens(parentRepository), async (req, res, next) => {
-  appointmentController.successUpdate(req, res, next);
-})
+parentRouter.post(
+  "/success/:session_id",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  async (req, res, next) => {
+    appointmentController.successUpdate(req, res, next);
+  }
+);
 
 //payment failure
-parentRouter.post("/failure/:session_id", validateTokens(parentRepository), async(req, res, next) => {
-  appointmentController.failureUpdate(req,res,next)
-})
+parentRouter.post(
+  "/failure/:session_id",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  async (req, res, next) => {
+    appointmentController.failureUpdate(req, res, next);
+  }
+);
 
 //fetch appointments
-parentRouter.get("/getappointments", validateTokens(parentRepository), async(req,res,next)=> {
-  appointmentController.getAppointments(req, res, next)
-})
+parentRouter.get(
+  "/getappointments",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  async (req, res, next) => {
+    appointmentController.getAppointments(req, res, next);
+  }
+);
 
 //notifications
-parentRouter.get('/notifications/:id',validateTokens(parentRepository), async(req,res,next) => {
-  controller.getNotifications(req,res,next)
-})
+parentRouter.get(
+  "/notifications/:id",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  async (req, res, next) => {
+    controller.getNotifications(req, res, next);
+  }
+);
 
 //notification-read
-parentRouter.post('/mark-notification-read', validateTokens(parentRepository),(req,res,next) => {
-  controller.changeToRead(req,res,next)
+parentRouter.post(
+  "/mark-notification-read",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    controller.changeToRead(req, res, next);
+  }
+);
+
+//give feedback
+parentRouter.post(
+  "/givefeedback",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    controller.submitFeedback(req, res, next);
+  }
+);
+
+//search
+parentRouter.get(
+  "/doctors",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    chatController.searchDoctor(req, res, next);
+  }
+);
+
+//fetch messages
+parentRouter.get(
+  "/fetchmessages",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    chatController.fetchMessages(req, res, next);
+  }
+);
+
+//save message
+parentRouter.post(
+  "/savemessage",
+  validateTokens("Parent"),
+  checkBlockedStatus,
+  (req, res, next) => {
+    chatController.saveMessage(req, res, next);
+  }
+);
+
+//chat lists
+parentRouter.get('/chatlists',validateTokens('Parent'), checkBlockedStatus, (req,res,next)=>{
+  chatController.chatLists(req,res,next)
 })
 
 //logout
